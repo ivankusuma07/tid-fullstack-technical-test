@@ -8,9 +8,12 @@ export interface User {
   updatedAt: Date;
 }
 
-/** The minimal identity carried through every use case ("who is acting"). */
+/** The identity carried through every use case ("who is acting"). */
 export interface Actor {
   id: string;
   name: string;
   role: Role;
 }
+
+/** Compact user reference embedded in work order / sparepart responses. */
+export type UserSummary = Actor;
