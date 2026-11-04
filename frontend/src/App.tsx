@@ -1,3 +1,21 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from 'react-router-dom';
+import { ActorProvider } from './context/ActorContext';
+import { ToastProvider } from './context/ToastContext';
+import { router } from './router';
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: true, retry: 1 } },
+});
+
 export default function App() {
-  return <h1 className="p-8 text-2xl font-semibold">Work Order System</h1>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <ActorProvider>
+          <RouterProvider router={router} />
+        </ActorProvider>
+      </ToastProvider>
+    </QueryClientProvider>
+  );
 }
