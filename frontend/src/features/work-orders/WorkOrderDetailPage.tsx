@@ -66,7 +66,10 @@ export function WorkOrderDetailPage() {
           <Card title="Work order">
             <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <Info label="Title">{wo.title}</Info>
-              <Info label="Fleet number">{wo.fleetNumber}</Info>
+              <Info label="Vehicle">
+                <span className="font-medium">{wo.vehicle.fleetNumber}</span>
+                <span className="block text-xs text-slate-500">{wo.vehicle.name}</span>
+              </Info>
               <Info label="Breakdown time">{formatDateTime(wo.breakdownTime)}</Info>
               <Info label="Mechanic">{wo.assignedMechanic?.name ?? '-'}</Info>
               <Info label="Start date">{formatDateTime(wo.startDate)}</Info>

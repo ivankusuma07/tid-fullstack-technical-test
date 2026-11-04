@@ -18,11 +18,9 @@ export class CreateWorkOrderDto {
   @MaxLength(2000)
   description?: string;
 
-  @ApiProperty({ example: 'DT-0035', description: 'Trimmed and upper-cased by the server' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
-  fleetNumber: string;
+  @ApiProperty({ example: 'a0000000-0000-4000-8000-000000000035', description: 'Vehicle id from GET /api/vehicles' })
+  @IsUUID()
+  vehicleId: string;
 
   @ApiProperty({ example: '2026-11-04T05:00:00.000Z', description: 'ISO 8601 with offset; must not be in the future' })
   @IsIsoDateTime()
@@ -43,12 +41,10 @@ export class EditDraftDto {
   @MaxLength(2000)
   description?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Vehicle id from GET /api/vehicles' })
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
-  fleetNumber?: string;
+  @IsUUID()
+  vehicleId?: string;
 
   @ApiPropertyOptional({ example: '2026-11-04T05:00:00.000Z' })
   @IsOptional()

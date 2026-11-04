@@ -10,6 +10,7 @@ import {
   InMemorySparepartRequestRepository,
   InMemoryUnitOfWork,
   InMemoryUserRepository,
+  InMemoryVehicleRepository,
   InMemoryWorkOrderRepository,
 } from '../../../testing/in-memory-repositories';
 import { SparepartRequestsService } from '../../sparepart-requests/application/sparepart-requests.service';
@@ -35,20 +36,24 @@ const rudi: Actor = { id: 'rudi', name: 'rudi', role: Role.MECHANIC };
 
 const HOUR = 3_600_000;
 
+const DT35 = { id: 'v-35', fleetNumber: 'DT-0035', name: 'Dump Truck' };
+const DT39 = { id: 'v-39', fleetNumber: 'DT-0039', name: 'Dump Truck' };
+
 function setup() {
   const users = new InMemoryUserRepository([admin, spv, budi, rudi].map((a) => user(a.id, a.role)));
   const requests = new InMemorySparepartRequestRepository();
   const activities = new InMemoryActivityRepository();
-  const workOrders = new InMemoryWorkOrderRepository(users, requests, activities);
+  const vehicles = new InMemoryVehicleRepository([DT35, DT39]);
+  const workOrders = new InMemoryWorkOrderRepository(users, requests, activities, vehicles);
   const clock = new FixedClock(new Date('2026-11-04T08:00:00.000Z'));
   const uow = new InMemoryUnitOfWork({ workOrders, sparepartRequests: requests, activities });
-  const service = new WorkOrdersService(workOrders, uow, users, clock);
+  const service = new WorkOrdersService(workOrders, uow, users, vehicles, clock);
   const spareparts = new SparepartRequestsService(uow, service);
 
   const createWo = (title = 'Engine overheating') =>
     service.create(admin, {
       title,
-      fleetNumber: ' dt-0035 ',
+      vehicleId: DT35.id,
       breakdownTime: new Date(clock.now().getTime() - HOUR),
     });
 
@@ -66,12 +71,12 @@ function setup() {
 
 describe('WorkOrdersService', () => {
   describe('create', () => {
-    it('creates a DRAFT with a WO number and a normalized fleet number', async () => {
+    it('creates a DRAFT with a WO number and its vehicle', async () => {
       const { createWo } = setup();
       const wo = await createWo();
       expect(wo.status).toBe(S.DRAFT);
       expect(wo.woNumber).toBe('WO-20261104-0001');
-      expect(wo.fleetNumber).toBe('DT-0035');
+      expect(wo.vehicle).toEqual(DT35);
       expect(wo.createdBy.id).toBe(admin.id);
       expect(wo.availableActions).toEqual([A.EDIT, A.DELETE, A.SUBMIT]);
     });
@@ -81,16 +86,23 @@ describe('WorkOrdersService', () => {
       await expect(
         service.create(admin, {
           title: 'x',
-          fleetNumber: 'DT-1',
+          vehicleId: DT35.id,
           breakdownTime: new Date(clock.now().getTime() + HOUR),
         }),
       ).rejects.toThrow(ValidationError);
     });
 
+    it('rejects an unknown vehicle', async () => {
+      const { service, clock } = setup();
+      await expect(
+        service.create(admin, { title: 'x', vehicleId: 'no-such-vehicle', breakdownTime: clock.now() }),
+      ).rejects.toThrow('Vehicle no-such-vehicle does not exist');
+    });
+
     it('only Admin can create', async () => {
       const { service, clock } = setup();
       await expect(
-        service.create(spv, { title: 'x', fleetNumber: 'DT-1', breakdownTime: clock.now() }),
+        service.create(spv, { title: 'x', vehicleId: DT35.id, breakdownTime: clock.now() }),
       ).rejects.toThrow(ForbiddenActionError);
     });
   });
@@ -99,9 +111,9 @@ describe('WorkOrdersService', () => {
     it('edits and deletes while DRAFT', async () => {
       const { service, createWo } = setup();
       const wo = await createWo();
-      const edited = await service.editDraft(admin, wo.id, { title: 'Brake noise', fleetNumber: 'dt-0039' });
+      const edited = await service.editDraft(admin, wo.id, { title: 'Brake noise', vehicleId: DT39.id });
       expect(edited.title).toBe('Brake noise');
-      expect(edited.fleetNumber).toBe('DT-0039');
+      expect(edited.vehicle.fleetNumber).toBe('DT-0039');
 
       await service.deleteDraft(admin, wo.id);
       await expect(service.getById(admin, wo.id)).rejects.toThrow(NotFoundError);

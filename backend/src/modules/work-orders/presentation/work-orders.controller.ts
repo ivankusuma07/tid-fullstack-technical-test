@@ -44,7 +44,7 @@ export class WorkOrdersController {
     return this.service.create(actor, {
       title: dto.title,
       description: dto.description,
-      fleetNumber: dto.fleetNumber,
+      vehicleId: dto.vehicleId,
       breakdownTime: new Date(dto.breakdownTime),
     });
   }

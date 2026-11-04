@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { WorkOrder, WorkOrderDetail } from '../../api/types';
 import { Modal } from '../../components/Modal';
-import { Field, Input, Textarea } from '../../components/ui';
+import { Field, Input, Select, Textarea } from '../../components/ui';
+import { useVehicles } from '../../hooks/useWorkOrders';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
 import { browserTimeZone, toIso, toLocalInput } from '../../lib/datetime';
 
@@ -17,14 +18,15 @@ export function WorkOrderFormModal({ workOrder, onClose, onCreated }: Props) {
   const { create, editDraft } = useWorkOrderActions();
   const [title, setTitle] = useState(workOrder?.title ?? '');
   const [description, setDescription] = useState(workOrder?.description ?? '');
-  const [fleetNumber, setFleetNumber] = useState(workOrder?.fleetNumber ?? '');
+  const [vehicleId, setVehicleId] = useState(workOrder?.vehicle.id ?? '');
+  const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const [breakdownTime, setBreakdownTime] = useState(toLocalInput(workOrder?.breakdownTime ?? new Date()));
   const maxLocal = toLocalInput(new Date());
 
   const mutation = workOrder ? editDraft : create;
 
   const submit = () => {
-    const values = { title, description, fleetNumber, breakdownTime: toIso(breakdownTime) };
+    const values = { title, description, vehicleId, breakdownTime: toIso(breakdownTime) };
     if (workOrder) {
       editDraft.mutate({ id: workOrder.id, values }, { onSuccess: onClose });
     } else {
@@ -45,16 +47,17 @@ export function WorkOrderFormModal({ workOrder, onClose, onCreated }: Props) {
       submitLabel={workOrder ? 'Save draft' : 'Create draft'}
       submitting={mutation.isPending}
     >
-      <Field label="Fleet number" hint="The vehicle, e.g. DT-0035 (saved in upper case)">
-        <Input
-          required
-          maxLength={20}
-          value={fleetNumber}
-          onChange={(e) => setFleetNumber(e.target.value)}
-          placeholder="DT-0035"
-          autoFocus
-          className="uppercase placeholder:normal-case"
-        />
+      <Field label="Vehicle (fleet number)">
+        <Select required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={loadingVehicles} autoFocus>
+          <option value="" disabled>
+            {loadingVehicles ? 'Loading vehicles…' : 'Select a vehicle…'}
+          </option>
+          {vehicles.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.fleetNumber} · {v.name}
+            </option>
+          ))}
+        </Select>
       </Field>
       <Field label="Title">
         <Input required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Engine overheating" />

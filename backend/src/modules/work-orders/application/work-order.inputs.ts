@@ -5,14 +5,14 @@ import { WorkOrderStatus } from '../domain/work-order-status.enum';
 export interface CreateWorkOrderInput {
   title: string;
   description?: string | null;
-  fleetNumber: string;
+  vehicleId: string;
   breakdownTime: Date;
 }
 
 export interface EditDraftInput {
   title?: string;
   description?: string | null;
-  fleetNumber?: string;
+  vehicleId?: string;
   breakdownTime?: Date;
 }
 

@@ -1,5 +1,6 @@
 import { SparepartRequestMapper } from '../../sparepart-requests/infrastructure/sparepart-request.mapper';
 import { toUserSummary } from '../../users/infrastructure/user.mapper';
+import { toVehicle } from '../../vehicles/infrastructure/typeorm-vehicle.repository';
 import { WorkOrder, WorkOrderDetail, WorkOrderView } from '../domain/work-order';
 import { WorkOrderOrmEntity } from './work-order.orm-entity';
 
@@ -11,7 +12,7 @@ export const WorkOrderMapper = {
       woNumber: row.woNumber,
       title: row.title,
       description: row.description,
-      fleetNumber: row.fleetNumber,
+      vehicleId: row.vehicleId,
       breakdownTime: row.breakdownTime,
       status: row.status,
       createdById: row.createdById,
@@ -23,10 +24,11 @@ export const WorkOrderMapper = {
     };
   },
 
-  /** Requires the createdBy / assignedMechanic relations to be loaded. */
+  /** Requires the vehicle / createdBy / assignedMechanic relations to be loaded. */
   toView(row: WorkOrderOrmEntity): WorkOrderView {
     return {
       ...WorkOrderMapper.toDomain(row),
+      vehicle: toVehicle(row.vehicle!),
       createdBy: toUserSummary(row.createdBy!),
       assignedMechanic: row.assignedMechanic ? toUserSummary(row.assignedMechanic) : null,
     };
@@ -55,7 +57,7 @@ export const WorkOrderMapper = {
     return {
       title: wo.title,
       description: wo.description,
-      fleetNumber: wo.fleetNumber,
+      vehicleId: wo.vehicleId,
       breakdownTime: wo.breakdownTime,
       status: wo.status,
       assignedMechanicId: wo.assignedMechanicId,

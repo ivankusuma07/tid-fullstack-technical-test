@@ -38,6 +38,7 @@ export class TypeOrmWorkOrderRepository implements WorkOrderRepository {
     const row = await this.repo.findOne({
       where: { id },
       relations: {
+        vehicle: true,
         createdBy: true,
         assignedMechanic: true,
         sparepartRequests: { items: true, requestedBy: true, approvedBy: true },
@@ -54,6 +55,7 @@ export class TypeOrmWorkOrderRepository implements WorkOrderRepository {
   async list(c: WorkOrderListCriteria): Promise<Page<WorkOrderView>> {
     const qb = this.repo
       .createQueryBuilder('wo')
+      .innerJoinAndSelect('wo.vehicle', 'vehicle')
       .leftJoinAndSelect('wo.createdBy', 'creator')
       .leftJoinAndSelect('wo.assignedMechanic', 'mechanic')
       .orderBy('wo.createdAt', 'DESC')
@@ -70,7 +72,7 @@ export class TypeOrmWorkOrderRepository implements WorkOrderRepository {
           w
             .where('wo.title ILIKE :term', { term })
             .orWhere('wo.woNumber ILIKE :term', { term })
-            .orWhere('wo.fleetNumber ILIKE :term', { term }),
+            .orWhere('vehicle.fleetNumber ILIKE :term', { term }),
         ),
       );
     }

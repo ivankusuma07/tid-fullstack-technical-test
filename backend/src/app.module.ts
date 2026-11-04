@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthController } from './modules/health/health.controller';
 import { SparepartRequestsModule } from './modules/sparepart-requests/sparepart-requests.module';
 import { UsersModule } from './modules/users/users.module';
+import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { WorkOrdersModule } from './modules/work-orders/work-orders.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { WorkOrdersModule } from './modules/work-orders/work-orders.module';
     DatabaseModule,
     UsersModule,
     AuthModule,
+    VehiclesModule,
     WorkOrdersModule,
     SparepartRequestsModule,
   ],

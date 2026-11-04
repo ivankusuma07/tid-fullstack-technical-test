@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { WorkOrderListParams } from '../api/types';
 import { usersApi } from '../api/users';
+import { vehiclesApi } from '../api/vehicles';
 import { workOrdersApi } from '../api/workOrders';
 import { useActor } from '../context/ActorContext';
 
@@ -33,4 +34,9 @@ export function useWorkOrder(id: string | undefined) {
 
 export function useMechanics() {
   return useQuery({ queryKey: ['users', 'MECHANIC'], queryFn: () => usersApi.list('MECHANIC') });
+}
+
+export function useVehicles() {
+  const { actor } = useActor();
+  return useQuery({ queryKey: ['vehicles'], queryFn: vehiclesApi.list, enabled: !!actor, staleTime: 5 * 60_000 });
 }

@@ -1,4 +1,5 @@
 import { UserSummary } from '../../users/domain/user';
+import { VehicleSummary } from '../../vehicles/domain/vehicle';
 import { SparepartRequestView } from '../../sparepart-requests/domain/sparepart-request';
 import { WorkOrderStatus } from './work-order-status.enum';
 import { WorkOrderActivityView } from './work-order-activity';
@@ -9,8 +10,8 @@ export interface WorkOrder {
   woNumber: string;
   title: string;
   description: string | null;
-  /** Vehicle identifier, normalized to upper case (e.g. DT-0035). */
-  fleetNumber: string;
+  /** The vehicle (fleet unit) this work order is for. */
+  vehicleId: string;
   /** When the vehicle broke down / was reported. */
   breakdownTime: Date;
   status: WorkOrderStatus;
@@ -22,8 +23,9 @@ export interface WorkOrder {
   updatedAt: Date;
 }
 
-/** A work order with its related users resolved (list rows). */
+/** A work order with its vehicle and users resolved (list rows). */
 export interface WorkOrderView extends WorkOrder {
+  vehicle: VehicleSummary;
   createdBy: UserSummary;
   assignedMechanic: UserSummary | null;
 }
@@ -38,13 +40,9 @@ export interface NewWorkOrder {
   woNumber: string;
   title: string;
   description: string | null;
-  fleetNumber: string;
+  vehicleId: string;
   breakdownTime: Date;
   status: WorkOrderStatus;
   createdById: string;
 }
 
-/** Trims and upper-cases a fleet number so "dt-0035 " and "DT-0035" are the same vehicle. */
-export function normalizeFleetNumber(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ').toUpperCase();
-}

@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserOrmEntity } from '../../users/infrastructure/user.orm-entity';
+import { VehicleOrmEntity } from '../../vehicles/infrastructure/vehicle.orm-entity';
 import { SparepartRequestOrmEntity } from '../../sparepart-requests/infrastructure/sparepart-request.orm-entity';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
 import { WorkOrderActivityOrmEntity } from './work-order-activity.orm-entity';
@@ -29,8 +30,12 @@ export class WorkOrderOrmEntity {
   description: string | null;
 
   @Index()
-  @Column({ name: 'fleet_number', type: 'varchar', length: 20 })
-  fleetNumber: string;
+  @Column({ name: 'vehicle_id', type: 'uuid' })
+  vehicleId: string;
+
+  @ManyToOne(() => VehicleOrmEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'vehicle_id' })
+  vehicle?: VehicleOrmEntity;
 
   @Column({ name: 'breakdown_time', type: 'timestamptz' })
   breakdownTime: Date;

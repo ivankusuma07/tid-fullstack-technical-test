@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CLOCK, SystemClock } from '../../common/application/clock';
 import { UsersModule } from '../users/users.module';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 import { UNIT_OF_WORK } from './application/unit-of-work';
 import { WorkOrdersService } from './application/work-orders.service';
 import { WorkOrdersController } from './presentation/work-orders.controller';
@@ -10,7 +11,7 @@ import { TypeOrmUnitOfWork } from './infrastructure/typeorm-unit-of-work';
 import { TypeOrmWorkOrderRepository } from './infrastructure/typeorm-work-order.repository';
 
 @Module({
-  imports: [UsersModule],
+  imports: [UsersModule, VehiclesModule],
   controllers: [WorkOrdersController],
   providers: [
     WorkOrdersService,

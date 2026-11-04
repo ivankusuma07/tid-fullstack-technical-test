@@ -4,7 +4,8 @@ import { ForbiddenActionError, NotFoundError, ValidationError } from '../../../c
 import { Role } from '../../users/domain/role.enum';
 import { Actor } from '../../users/domain/user';
 import { USER_REPOSITORY, UserRepository } from '../../users/domain/user.repository';
-import { normalizeFleetNumber, WorkOrder, WorkOrderDetail, WorkOrderView } from '../domain/work-order';
+import { VEHICLE_REPOSITORY, VehicleRepository } from '../../vehicles/domain/vehicle';
+import { WorkOrder, WorkOrderDetail, WorkOrderView } from '../domain/work-order';
 import { assertCan, availableActions, canCreate, WorkOrderAction } from '../domain/work-order.policy';
 import { Page, WORK_ORDER_REPOSITORY, WorkOrderRepository } from '../domain/work-order.repository';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
@@ -30,6 +31,7 @@ export class WorkOrdersService {
     @Inject(WORK_ORDER_REPOSITORY) private readonly workOrders: WorkOrderRepository,
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(VEHICLE_REPOSITORY) private readonly vehicles: VehicleRepository,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -66,7 +68,7 @@ export class WorkOrdersService {
     const data = {
       title: this.requireText(input.title, 'Title'),
       description: this.optionalText(input.description),
-      fleetNumber: this.requireFleetNumber(input.fleetNumber),
+      vehicleId: await this.requireVehicle(input.vehicleId),
       breakdownTime: this.notInFuture(input.breakdownTime, 'Breakdown time'),
       status: WorkOrderStatus.DRAFT,
       createdById: actor.id,
@@ -87,11 +89,12 @@ export class WorkOrdersService {
     return this.getById(actor, id);
   }
 
-  editDraft(actor: Actor, id: string, input: EditDraftInput) {
+  async editDraft(actor: Actor, id: string, input: EditDraftInput) {
+    const vehicleId = input.vehicleId !== undefined ? await this.requireVehicle(input.vehicleId) : undefined;
     return this.transition(actor, id, WorkOrderAction.EDIT, (wo) => {
       if (input.title !== undefined) wo.title = this.requireText(input.title, 'Title');
       if (input.description !== undefined) wo.description = this.optionalText(input.description);
-      if (input.fleetNumber !== undefined) wo.fleetNumber = this.requireFleetNumber(input.fleetNumber);
+      if (vehicleId) wo.vehicleId = vehicleId;
       if (input.breakdownTime !== undefined) {
         wo.breakdownTime = this.notInFuture(input.breakdownTime, 'Breakdown time');
       }
@@ -202,11 +205,10 @@ export class WorkOrdersService {
     return trimmed ? trimmed : null;
   }
 
-  private requireFleetNumber(value: string): string {
-    const normalized = normalizeFleetNumber(value ?? '');
-    if (!normalized) throw new ValidationError('Fleet number is required');
-    if (normalized.length > 20) throw new ValidationError('Fleet number must be at most 20 characters');
-    return normalized;
+  private async requireVehicle(vehicleId: string): Promise<string> {
+    const vehicle = vehicleId ? await this.vehicles.findById(vehicleId) : null;
+    if (!vehicle) throw new ValidationError(`Vehicle ${vehicleId} does not exist`);
+    return vehicle.id;
   }
 
   private notInFuture(date: Date, field: string): Date {

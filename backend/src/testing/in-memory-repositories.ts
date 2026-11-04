@@ -12,6 +12,7 @@ import { SparepartRequestStatus } from '../modules/sparepart-requests/domain/spa
 import { Role } from '../modules/users/domain/role.enum';
 import { User, UserSummary } from '../modules/users/domain/user';
 import { UserRepository } from '../modules/users/domain/user.repository';
+import { Vehicle, VehicleRepository } from '../modules/vehicles/domain/vehicle';
 import { NewWorkOrder, WorkOrder, WorkOrderDetail, WorkOrderView } from '../modules/work-orders/domain/work-order';
 import {
   Page,
@@ -40,6 +41,22 @@ export class InMemoryUserRepository implements UserRepository {
   summary(id: string): UserSummary {
     const u = this.users.find((x) => x.id === id)!;
     return { id: u.id, name: u.name, role: u.role };
+  }
+}
+
+export class InMemoryVehicleRepository implements VehicleRepository {
+  constructor(public readonly vehicles: Vehicle[] = []) {}
+
+  async findById(id: string) {
+    return this.vehicles.find((v) => v.id === id) ?? null;
+  }
+
+  async findAll() {
+    return [...this.vehicles];
+  }
+
+  get(id: string): Vehicle {
+    return this.vehicles.find((v) => v.id === id)!;
   }
 }
 
@@ -96,7 +113,8 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
   constructor(
     private readonly users: InMemoryUserRepository,
     private readonly requests: InMemorySparepartRequestRepository,
-    private readonly activities: InMemoryActivityRepository = new InMemoryActivityRepository(),
+    private readonly activities: InMemoryActivityRepository,
+    private readonly vehicles: InMemoryVehicleRepository,
   ) {}
 
   async nextWoNumber(now: Date) {
@@ -148,7 +166,7 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
       .filter((r) => !c.assignedMechanicId || r.assignedMechanicId === c.assignedMechanicId)
       .filter((r) => !c.excludeStatuses?.includes(r.status))
       .filter(
-        (r) => !term || [r.title, r.woNumber, r.fleetNumber].some((f) => f.toLowerCase().includes(term)),
+        (r) => !term || [r.title, r.woNumber, this.vehicles.get(r.vehicleId).fleetNumber].some((f) => f.toLowerCase().includes(term)),
       )
       .reverse();
     const start = (c.page - 1) * c.limit;
@@ -174,6 +192,7 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
   private toView(row: WorkOrder): WorkOrderView {
     return {
       ...clone(row),
+      vehicle: this.vehicles.get(row.vehicleId),
       createdBy: this.users.summary(row.createdById),
       assignedMechanic: row.assignedMechanicId ? this.users.summary(row.assignedMechanicId) : null,
     };

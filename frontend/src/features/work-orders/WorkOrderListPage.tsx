@@ -132,7 +132,9 @@ export function WorkOrderListPage() {
               data?.items.map((wo, i) => (
                 <tr key={wo.id} className="border-t border-slate-100 align-middle hover:bg-slate-50">
                   <td className="px-3 py-2.5 text-slate-500">{(page - 1) * limit + i + 1}</td>
-                  <td className="px-3 py-2.5 font-medium whitespace-nowrap text-slate-800">{wo.fleetNumber}</td>
+                  <td className="px-3 py-2.5 font-medium whitespace-nowrap text-slate-800" title={wo.vehicle.name}>
+                    {wo.vehicle.fleetNumber}
+                  </td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <Link to={`/work-orders/${wo.id}`} className="text-emerald-700 hover:underline">
                       {wo.woNumber}

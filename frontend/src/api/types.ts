@@ -25,6 +25,12 @@ export type WorkOrderAction =
 
 export type SparepartRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export interface Vehicle {
+  id: string;
+  fleetNumber: string;
+  name: string;
+}
+
 export interface UserSummary {
   id: string;
   name: string;
@@ -37,7 +43,7 @@ export interface WorkOrder {
   woNumber: string;
   title: string;
   description: string | null;
-  fleetNumber: string;
+  vehicle: Vehicle;
   breakdownTime: string;
   status: WorkOrderStatus;
   createdBy: UserSummary;
@@ -105,7 +111,7 @@ export interface WorkOrderListParams {
 export interface WorkOrderFormValues {
   title: string;
   description?: string;
-  fleetNumber: string;
+  vehicleId: string;
   breakdownTime: string;
 }
 
