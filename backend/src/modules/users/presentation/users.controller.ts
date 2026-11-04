@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { IsEnum, IsOptional } from 'class-validator';
 import { ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../../common/decorators/roles.decorator';
 import { Role } from '../domain/role.enum';
 import { UsersService } from '../application/users.service';
 
@@ -17,6 +18,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   /** Public on purpose: the frontend needs it to build the actor selector before anyone is "logged in". */
+  @Public()
   @Get()
   async list(@Query() query: ListUsersQuery) {
     const users = await this.usersService.list(query.role);

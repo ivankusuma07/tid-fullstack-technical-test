@@ -68,9 +68,9 @@ export class SparepartRequestsService {
       const request = await sparepartRequests.findById(requestId, { lock: true });
       if (!request) throw new NotFoundError('Sparepart request', requestId);
 
+      this.assertPending(request);
       const wo = await this.lockWorkOrder(workOrders, request.workOrderId);
       const next = assertCan(action, wo, actor)!;
-      this.assertPending(request);
 
       request.status =
         action === WorkOrderAction.APPROVE_SPAREPART
