@@ -8,12 +8,14 @@ import {
   ValidationError,
 } from '../errors/domain.errors';
 
-const STATUS_BY_ERROR = new Map<Function, HttpStatus>([
+type DomainErrorClass = new (...args: never[]) => DomainError;
+
+const STATUS_BY_ERROR: [DomainErrorClass, HttpStatus][] = [
   [NotFoundError, HttpStatus.NOT_FOUND],
   [InvalidTransitionError, HttpStatus.CONFLICT],
   [ForbiddenActionError, HttpStatus.FORBIDDEN],
   [ValidationError, HttpStatus.BAD_REQUEST],
-]);
+];
 
 const REASON: Partial<Record<HttpStatus, string>> = {
   [HttpStatus.NOT_FOUND]: 'Not Found',
@@ -26,7 +28,8 @@ const REASON: Partial<Record<HttpStatus, string>> = {
 @Catch(DomainError)
 export class DomainExceptionFilter implements ExceptionFilter {
   catch(error: DomainError, host: ArgumentsHost) {
-    const status = STATUS_BY_ERROR.get(error.constructor) ?? HttpStatus.INTERNAL_SERVER_ERROR;
+    const status =
+      STATUS_BY_ERROR.find(([cls]) => error instanceof cls)?.[1] ?? HttpStatus.INTERNAL_SERVER_ERROR;
     host
       .switchToHttp()
       .getResponse<Response>()
