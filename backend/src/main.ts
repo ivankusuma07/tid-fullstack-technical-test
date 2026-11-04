@@ -14,10 +14,12 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Work Order System API')
-    .setDescription('Pick a seeded user (GET /api/users) and send its id as the X-User-Id header.')
+    .setDescription(
+      'Log in with POST /api/auth/login { userId } (ids from GET /api/users), then click "Authorize" and paste the accessToken.',
+    )
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'X-User-Id', in: 'header' }, 'actor')
-    .addSecurityRequirements('actor')
+    .addBearerAuth()
+    .addSecurityRequirements('bearer')
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
 
