@@ -1,6 +1,7 @@
 import { UserSummary } from '../../users/domain/user';
 import { SparepartRequestView } from '../../sparepart-requests/domain/sparepart-request';
 import { WorkOrderStatus } from './work-order-status.enum';
+import { WorkOrderActivityView } from './work-order-activity';
 
 export interface WorkOrder {
   id: string;
@@ -27,9 +28,10 @@ export interface WorkOrderView extends WorkOrder {
   assignedMechanic: UserSummary | null;
 }
 
-/** Detail page: also includes the full sparepart request history, newest first. */
+/** Detail page: also includes the sparepart request history (newest first) and the timeline (oldest first). */
 export interface WorkOrderDetail extends WorkOrderView {
   sparepartRequests: SparepartRequestView[];
+  activities: WorkOrderActivityView[];
 }
 
 export interface NewWorkOrder {

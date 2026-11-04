@@ -6,6 +6,7 @@ import {
 } from '../../../common/errors/domain.errors';
 import {
   FixedClock,
+  InMemoryActivityRepository,
   InMemorySparepartRequestRepository,
   InMemoryUnitOfWork,
   InMemoryUserRepository,
@@ -37,13 +38,12 @@ const HOUR = 3_600_000;
 function setup() {
   const users = new InMemoryUserRepository([admin, spv, budi, rudi].map((a) => user(a.id, a.role)));
   const requests = new InMemorySparepartRequestRepository();
-  const workOrders = new InMemoryWorkOrderRepository(users, requests);
+  const activities = new InMemoryActivityRepository();
+  const workOrders = new InMemoryWorkOrderRepository(users, requests, activities);
   const clock = new FixedClock(new Date('2026-11-04T08:00:00.000Z'));
-  const service = new WorkOrdersService(workOrders, users, clock);
-  const spareparts = new SparepartRequestsService(
-    new InMemoryUnitOfWork({ workOrders, sparepartRequests: requests }),
-    service,
-  );
+  const uow = new InMemoryUnitOfWork({ workOrders, sparepartRequests: requests, activities });
+  const service = new WorkOrdersService(workOrders, uow, users, clock);
+  const spareparts = new SparepartRequestsService(uow, service);
 
   const createWo = (title = 'Engine overheating') =>
     service.create(admin, {
@@ -170,6 +170,36 @@ describe('WorkOrdersService', () => {
       const approved = await spareparts.approve(spv, second.sparepartRequests[0].id);
       expect(approved.status).toBe(S.READY_TO_WORK);
       expect(approved.sparepartRequests.map((r) => r.status)).toEqual(['APPROVED', 'REJECTED']);
+    });
+  });
+
+  describe('activity timeline', () => {
+    it('records every step in order with status changes and notes', async () => {
+      const { service, spareparts, toUpdated } = setup();
+      const id = await toUpdated();
+      const waiting = await spareparts.requestSparepart(budi, id, { note: 'Hose cracked', items: [{ name: 'Hose', qty: 1 }] });
+      await spareparts.reject(spv, waiting.sparepartRequests[0].id, 'Check the clamp first');
+      const wo = await service.start(budi, id);
+
+      expect(wo.activities.map((a) => [a.action, a.fromStatus, a.toStatus, a.actor.id])).toEqual([
+        ['CREATE', null, S.DRAFT, admin.id],
+        [A.SUBMIT, S.DRAFT, S.SUBMITTED, admin.id],
+        [A.ASSIGN, S.SUBMITTED, S.ASSIGNED, spv.id],
+        [A.UPDATE, S.ASSIGNED, S.UPDATED, admin.id],
+        [A.REQUEST_SPAREPART, S.UPDATED, S.WAITING_SPAREPART, budi.id],
+        [A.REJECT_SPAREPART, S.WAITING_SPAREPART, S.UPDATED, spv.id],
+        [A.START, S.UPDATED, S.WORKING, budi.id],
+      ]);
+      expect(wo.activities.find((a) => a.action === A.ASSIGN)!.note).toBe('Assigned to budi');
+      expect(wo.activities.find((a) => a.action === A.REJECT_SPAREPART)!.note).toBe('Check the clamp first');
+    });
+
+    it('a rejected step leaves no timeline entry', async () => {
+      const { service, toUpdated } = setup();
+      const id = await toUpdated();
+      await expect(service.start(rudi, id)).rejects.toThrow(ForbiddenActionError);
+      const wo = await service.getById(admin, id);
+      expect(wo.activities.map((a) => a.action)).not.toContain(A.START);
     });
   });
 

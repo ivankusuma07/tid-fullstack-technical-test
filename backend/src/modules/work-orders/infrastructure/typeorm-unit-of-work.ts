@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { TypeOrmWorkOrderRepository } from '../../work-orders/infrastructure/typeorm-work-order.repository';
+import { TypeOrmSparepartRequestRepository } from '../../sparepart-requests/infrastructure/typeorm-sparepart-request.repository';
 import { TransactionalRepositories, UnitOfWork } from '../application/unit-of-work';
-import { TypeOrmSparepartRequestRepository } from './typeorm-sparepart-request.repository';
+import { TypeOrmWorkOrderRepository } from './typeorm-work-order.repository';
+import { TypeOrmWorkOrderActivityRepository } from './typeorm-work-order-activity.repository';
 
 @Injectable()
 export class TypeOrmUnitOfWork implements UnitOfWork {
@@ -13,6 +14,7 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
       work({
         workOrders: new TypeOrmWorkOrderRepository(manager),
         sparepartRequests: new TypeOrmSparepartRequestRepository(manager),
+        activities: new TypeOrmWorkOrderActivityRepository(manager),
       }),
     );
   }

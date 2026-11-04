@@ -41,8 +41,12 @@ export class TypeOrmWorkOrderRepository implements WorkOrderRepository {
         createdBy: true,
         assignedMechanic: true,
         sparepartRequests: { items: true, requestedBy: true, approvedBy: true },
+        activities: { actor: true },
       },
-      order: { sparepartRequests: { createdAt: 'DESC', items: { createdAt: 'ASC' } } },
+      order: {
+        sparepartRequests: { createdAt: 'DESC', items: { createdAt: 'ASC' } },
+        activities: { createdAt: 'ASC' },
+      },
     });
     return row ? WorkOrderMapper.toDetail(row) : null;
   }

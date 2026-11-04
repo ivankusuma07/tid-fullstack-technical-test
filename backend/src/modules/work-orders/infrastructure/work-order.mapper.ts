@@ -36,6 +36,17 @@ export const WorkOrderMapper = {
     return {
       ...WorkOrderMapper.toView(row),
       sparepartRequests: (row.sparepartRequests ?? []).map(SparepartRequestMapper.toView),
+      activities: (row.activities ?? []).map((a) => ({
+        id: a.id,
+        workOrderId: a.workOrderId,
+        actorId: a.actorId,
+        action: a.action,
+        fromStatus: a.fromStatus,
+        toStatus: a.toStatus,
+        note: a.note,
+        createdAt: a.createdAt,
+        actor: toUserSummary(a.actor!),
+      })),
     };
   },
 

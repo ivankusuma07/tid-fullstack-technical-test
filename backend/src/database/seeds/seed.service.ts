@@ -27,13 +27,18 @@ export class SeedService implements OnApplicationBootstrap {
     const [{ count }] = await this.dataSource.query(`SELECT count(*)::int AS count FROM work_orders`);
     if (count === 0) {
       const admin = SEED_USERS.find((u) => u.role === Role.ADMIN)!;
-      await this.dataSource.query(
+      const [sample] = await this.dataSource.query(
         `INSERT INTO work_orders (wo_number, title, description, fleet_number, breakdown_time, status, created_by)
          VALUES (
            'WO-' || to_char(now(), 'YYYYMMDD') || '-' || lpad(nextval('work_order_number_seq')::text, 4, '0'),
            $1, $2, $3, now() - interval '2 hours', 'DRAFT', $4
-         )`,
+         )
+         RETURNING id`,
         ['Engine overheating', 'Coolant temperature warning on the haul road.', 'DT-0035', admin.id],
+      );
+      await this.dataSource.query(
+        `INSERT INTO work_order_activities (work_order_id, actor_id, action, to_status) VALUES ($1, $2, 'CREATE', 'DRAFT')`,
+        [sample.id, admin.id],
       );
     }
     this.logger.log('Seed data ensured');

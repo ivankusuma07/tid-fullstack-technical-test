@@ -10,7 +10,7 @@ import { WorkOrder } from '../../work-orders/domain/work-order';
 import { assertCan, WorkOrderAction } from '../../work-orders/domain/work-order.policy';
 import { SparepartRequest } from '../domain/sparepart-request';
 import { SparepartRequestStatus } from '../domain/sparepart-request-status.enum';
-import { TransactionalRepositories, UNIT_OF_WORK, UnitOfWork } from './unit-of-work';
+import { TransactionalRepositories, UNIT_OF_WORK, UnitOfWork } from '../../work-orders/application/unit-of-work';
 
 export interface RequestSparepartInput {
   note: string;
@@ -18,8 +18,8 @@ export interface RequestSparepartInput {
 }
 
 /**
- * Sparepart use cases. Each one writes to two tables (request + work order status),
- * so each runs inside a single transaction with the rows locked.
+ * Sparepart use cases. Each one writes the request, the work order status and a timeline
+ * entry, so each runs inside a single transaction with the rows locked.
  */
 @Injectable()
 export class SparepartRequestsService {
@@ -34,8 +34,9 @@ export class SparepartRequestsService {
     if (!note) throw new ValidationError('A note explaining why the spareparts are needed is required');
     const items = this.normalizeItems(input.items);
 
-    await this.uow.run(async ({ workOrders, sparepartRequests }) => {
+    await this.uow.run(async ({ workOrders, sparepartRequests, activities }) => {
       const wo = await this.lockWorkOrder(workOrders, workOrderId);
+      const from = wo.status;
       const next = assertCan(WorkOrderAction.REQUEST_SPAREPART, wo, actor)!;
 
       if (await sparepartRequests.findPendingByWorkOrder(wo.id)) {
@@ -44,6 +45,14 @@ export class SparepartRequestsService {
       await sparepartRequests.create({ workOrderId: wo.id, requestNote: note, requestedById: actor.id, items });
       wo.status = next;
       await workOrders.save(wo);
+      await activities.record({
+        workOrderId: wo.id,
+        actorId: actor.id,
+        action: WorkOrderAction.REQUEST_SPAREPART,
+        fromStatus: from,
+        toStatus: next,
+        note,
+      });
     });
 
     return this.workOrdersService.getById(actor, workOrderId);
@@ -64,12 +73,13 @@ export class SparepartRequestsService {
     action: WorkOrderAction.APPROVE_SPAREPART | WorkOrderAction.REJECT_SPAREPART,
     note?: string,
   ) {
-    const workOrderId = await this.uow.run(async ({ workOrders, sparepartRequests }) => {
+    const workOrderId = await this.uow.run(async ({ workOrders, sparepartRequests, activities }) => {
       const request = await sparepartRequests.findById(requestId, { lock: true });
       if (!request) throw new NotFoundError('Sparepart request', requestId);
 
       this.assertPending(request);
       const wo = await this.lockWorkOrder(workOrders, request.workOrderId);
+      const from = wo.status;
       const next = assertCan(action, wo, actor)!;
 
       request.status =
@@ -82,6 +92,14 @@ export class SparepartRequestsService {
 
       wo.status = next;
       await workOrders.save(wo);
+      await activities.record({
+        workOrderId: wo.id,
+        actorId: actor.id,
+        action,
+        fromStatus: from,
+        toStatus: next,
+        note: request.approvalNote,
+      });
       return wo.id;
     });
 

@@ -3,7 +3,9 @@ import { Clock } from '../common/application/clock';
 import {
   TransactionalRepositories,
   UnitOfWork,
-} from '../modules/sparepart-requests/application/unit-of-work';
+} from '../modules/work-orders/application/unit-of-work';
+import { NewWorkOrderActivity, WorkOrderActivity } from '../modules/work-orders/domain/work-order-activity';
+import { WorkOrderActivityRepository } from '../modules/work-orders/domain/work-order-activity.repository';
 import { NewSparepartRequest, SparepartRequest } from '../modules/sparepart-requests/domain/sparepart-request';
 import { SparepartRequestRepository } from '../modules/sparepart-requests/domain/sparepart-request.repository';
 import { SparepartRequestStatus } from '../modules/sparepart-requests/domain/sparepart-request-status.enum';
@@ -79,6 +81,14 @@ export class InMemorySparepartRequestRepository implements SparepartRequestRepos
   }
 }
 
+export class InMemoryActivityRepository implements WorkOrderActivityRepository {
+  readonly rows: WorkOrderActivity[] = [];
+
+  async record(activity: NewWorkOrderActivity) {
+    this.rows.push({ ...activity, id: randomUUID(), createdAt: new Date() });
+  }
+}
+
 export class InMemoryWorkOrderRepository implements WorkOrderRepository {
   readonly rows: WorkOrder[] = [];
   private seq = 0;
@@ -86,6 +96,7 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
   constructor(
     private readonly users: InMemoryUserRepository,
     private readonly requests: InMemorySparepartRequestRepository,
+    private readonly activities: InMemoryActivityRepository = new InMemoryActivityRepository(),
   ) {}
 
   async nextWoNumber(now: Date) {
@@ -124,7 +135,10 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
         approvedBy: r.approvedById ? this.users.summary(r.approvedById) : null,
       }))
       .reverse();
-    return { ...this.toView(row), sparepartRequests };
+    const activities = this.activities.rows
+      .filter((a) => a.workOrderId === id)
+      .map((a) => ({ ...clone(a), actor: this.users.summary(a.actorId) }));
+    return { ...this.toView(row), sparepartRequests, activities };
   }
 
   async list(c: WorkOrderListCriteria): Promise<Page<WorkOrderView>> {

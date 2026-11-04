@@ -12,6 +12,7 @@ import {
 import { UserOrmEntity } from '../../users/infrastructure/user.orm-entity';
 import { SparepartRequestOrmEntity } from '../../sparepart-requests/infrastructure/sparepart-request.orm-entity';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
+import { WorkOrderActivityOrmEntity } from './work-order-activity.orm-entity';
 
 @Entity('work_orders')
 export class WorkOrderOrmEntity {
@@ -61,6 +62,9 @@ export class WorkOrderOrmEntity {
 
   @OneToMany(() => SparepartRequestOrmEntity, (r) => r.workOrder)
   sparepartRequests?: SparepartRequestOrmEntity[];
+
+  @OneToMany(() => WorkOrderActivityOrmEntity, (a) => a.workOrder)
+  activities?: WorkOrderActivityOrmEntity[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

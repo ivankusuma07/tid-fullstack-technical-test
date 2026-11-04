@@ -68,8 +68,23 @@ export interface SparepartRequest {
   updatedAt: string;
 }
 
+export type ActivityAction = WorkOrderAction | 'CREATE';
+
+export interface WorkOrderActivity {
+  id: string;
+  action: ActivityAction;
+  fromStatus: WorkOrderStatus | null;
+  toStatus: WorkOrderStatus | null;
+  note: string | null;
+  actor: UserSummary;
+  createdAt: string;
+}
+
 export interface WorkOrderDetail extends WorkOrder {
+  /** Newest first. */
   sparepartRequests: SparepartRequest[];
+  /** Oldest first. */
+  activities: WorkOrderActivity[];
 }
 
 export interface Page<T> {

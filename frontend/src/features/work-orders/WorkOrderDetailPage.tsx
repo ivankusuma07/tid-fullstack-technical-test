@@ -5,6 +5,7 @@ import { Card, Icon, Spinner } from '../../components/ui';
 import { useWorkOrder } from '../../hooks/useWorkOrders';
 import { formatDateTime } from '../../lib/datetime';
 import { ActionBar } from './ActionBar';
+import { ActivityTimeline } from './ActivityTimeline';
 import { SparepartRequestList } from './SparepartRequestList';
 import { NEXT_STEP } from './workflow';
 import { WorkflowStepper } from './WorkflowStepper';
@@ -60,28 +61,36 @@ export function WorkOrderDetailPage() {
         <WorkflowStepper workOrder={wo} />
       </Card>
 
-      <Card title="Work order">
-        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Info label="Title">{wo.title}</Info>
-          <Info label="Fleet number">{wo.fleetNumber}</Info>
-          <Info label="Breakdown time">{formatDateTime(wo.breakdownTime)}</Info>
-          <Info label="Mechanic">{wo.assignedMechanic?.name ?? '-'}</Info>
-          <Info label="Start date">{formatDateTime(wo.startDate)}</Info>
-          <Info label="End date">{formatDateTime(wo.endDate)}</Info>
-          <Info label="Created by">{wo.createdBy.name}</Info>
-          <Info label="Created at">{formatDateTime(wo.createdAt)}</Info>
-          <Info label="Last updated">{formatDateTime(wo.updatedAt)}</Info>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Info label="Description">
-              <span className="whitespace-pre-wrap">{wo.description || '-'}</span>
-            </Info>
-          </div>
-        </dl>
-      </Card>
-
+      <div className="grid items-start gap-5 xl:grid-cols-3">
+        <div className="space-y-5 xl:col-span-2">
+          <Card title="Work order">
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Info label="Title">{wo.title}</Info>
+              <Info label="Fleet number">{wo.fleetNumber}</Info>
+              <Info label="Breakdown time">{formatDateTime(wo.breakdownTime)}</Info>
+              <Info label="Mechanic">{wo.assignedMechanic?.name ?? '-'}</Info>
+              <Info label="Start date">{formatDateTime(wo.startDate)}</Info>
+              <Info label="End date">{formatDateTime(wo.endDate)}</Info>
+              <Info label="Created by">{wo.createdBy.name}</Info>
+              <Info label="Created at">{formatDateTime(wo.createdAt)}</Info>
+              <Info label="Last updated">{formatDateTime(wo.updatedAt)}</Info>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <Info label="Description">
+                  <span className="whitespace-pre-wrap">{wo.description || '-'}</span>
+                </Info>
+              </div>
+            </dl>
+          </Card>
+    
       <Card title="Sparepart requests">
         <SparepartRequestList requests={wo.sparepartRequests} />
       </Card>
+        </div>
+
+        <Card title="Activity">
+          <ActivityTimeline activities={wo.activities} />
+        </Card>
+      </div>
     </div>
   );
 }

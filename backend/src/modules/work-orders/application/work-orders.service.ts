@@ -8,6 +8,7 @@ import { normalizeFleetNumber, WorkOrder, WorkOrderDetail, WorkOrderView } from 
 import { assertCan, availableActions, canCreate, WorkOrderAction } from '../domain/work-order.policy';
 import { Page, WORK_ORDER_REPOSITORY, WorkOrderRepository } from '../domain/work-order.repository';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
+import { TransactionalRepositories, UNIT_OF_WORK, UnitOfWork } from './unit-of-work';
 import {
   CreateWorkOrderInput,
   EditDraftInput,
@@ -25,7 +26,9 @@ const MAX_PAGE_SIZE = 100;
 @Injectable()
 export class WorkOrdersService {
   constructor(
+    /** Used for reads; writes go through the unit of work. */
     @Inject(WORK_ORDER_REPOSITORY) private readonly workOrders: WorkOrderRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
@@ -60,37 +63,48 @@ export class WorkOrdersService {
   async create(actor: Actor, input: CreateWorkOrderInput): Promise<WithActions<WorkOrderDetail>> {
     if (!canCreate(actor)) throw new ForbiddenActionError('Only ADMIN can create a work order');
 
-    const now = this.clock.now();
-    const created = await this.workOrders.create({
-      woNumber: await this.workOrders.nextWoNumber(now),
+    const data = {
       title: this.requireText(input.title, 'Title'),
       description: this.optionalText(input.description),
       fleetNumber: this.requireFleetNumber(input.fleetNumber),
       breakdownTime: this.notInFuture(input.breakdownTime, 'Breakdown time'),
       status: WorkOrderStatus.DRAFT,
       createdById: actor.id,
+    };
+
+    const id = await this.uow.run(async ({ workOrders, activities }) => {
+      const created = await workOrders.create({ ...data, woNumber: await workOrders.nextWoNumber(this.clock.now()) });
+      await activities.record({
+        workOrderId: created.id,
+        actorId: actor.id,
+        action: 'CREATE',
+        fromStatus: null,
+        toStatus: WorkOrderStatus.DRAFT,
+        note: null,
+      });
+      return created.id;
     });
-    return this.getById(actor, created.id);
-  }
-
-  async editDraft(actor: Actor, id: string, input: EditDraftInput): Promise<WithActions<WorkOrderDetail>> {
-    const wo = await this.load(id);
-    assertCan(WorkOrderAction.EDIT, wo, actor);
-
-    if (input.title !== undefined) wo.title = this.requireText(input.title, 'Title');
-    if (input.description !== undefined) wo.description = this.optionalText(input.description);
-    if (input.fleetNumber !== undefined) wo.fleetNumber = this.requireFleetNumber(input.fleetNumber);
-    if (input.breakdownTime !== undefined) {
-      wo.breakdownTime = this.notInFuture(input.breakdownTime, 'Breakdown time');
-    }
-    await this.workOrders.save(wo);
     return this.getById(actor, id);
   }
 
+  editDraft(actor: Actor, id: string, input: EditDraftInput) {
+    return this.transition(actor, id, WorkOrderAction.EDIT, (wo) => {
+      if (input.title !== undefined) wo.title = this.requireText(input.title, 'Title');
+      if (input.description !== undefined) wo.description = this.optionalText(input.description);
+      if (input.fleetNumber !== undefined) wo.fleetNumber = this.requireFleetNumber(input.fleetNumber);
+      if (input.breakdownTime !== undefined) {
+        wo.breakdownTime = this.notInFuture(input.breakdownTime, 'Breakdown time');
+      }
+    });
+  }
+
+  /** Hard delete; the timeline goes with it (ON DELETE CASCADE), as nobody else has acted on a draft. */
   async deleteDraft(actor: Actor, id: string): Promise<void> {
-    const wo = await this.load(id);
-    assertCan(WorkOrderAction.DELETE, wo, actor);
-    await this.workOrders.delete(id);
+    await this.uow.run(async ({ workOrders }) => {
+      const wo = await this.load(workOrders, id);
+      assertCan(WorkOrderAction.DELETE, wo, actor);
+      await workOrders.delete(id);
+    });
   }
 
   submit(actor: Actor, id: string) {
@@ -103,7 +117,9 @@ export class WorkOrdersService {
     if (mechanic.role !== Role.MECHANIC) throw new ValidationError(`${mechanic.name} is not a mechanic`);
 
     return this.transition(actor, id, WorkOrderAction.ASSIGN, (wo) => {
+      const reassigned = wo.assignedMechanicId !== null && wo.assignedMechanicId !== mechanic.id;
       wo.assignedMechanicId = mechanic.id;
+      return `${reassigned ? 'Reassigned' : 'Assigned'} to ${mechanic.name}`;
     });
   }
 
@@ -133,23 +149,30 @@ export class WorkOrdersService {
 
   // ---------- helpers ----------
 
-  /** Load, check the policy, apply changes, set the next status, save. */
+  /**
+   * In one transaction: lock the row, check the policy, apply changes, set the next status,
+   * save, and append the timeline entry. `apply` may return a note for the timeline.
+   */
   private async transition(
     actor: Actor,
     id: string,
     action: WorkOrderAction,
-    apply?: (wo: WorkOrder) => void,
+    apply?: (wo: WorkOrder) => string | void,
   ): Promise<WithActions<WorkOrderDetail>> {
-    const wo = await this.load(id);
-    const next = assertCan(action, wo, actor);
-    apply?.(wo);
-    if (next) wo.status = next;
-    await this.workOrders.save(wo);
+    await this.uow.run(async ({ workOrders, activities }) => {
+      const wo = await this.load(workOrders, id);
+      const from = wo.status;
+      const next = assertCan(action, wo, actor);
+      const note = apply?.(wo) ?? null;
+      if (next) wo.status = next;
+      await workOrders.save(wo);
+      await activities.record({ workOrderId: id, actorId: actor.id, action, fromStatus: from, toStatus: wo.status, note });
+    });
     return this.getById(actor, id);
   }
 
-  private async load(id: string): Promise<WorkOrder> {
-    const wo = await this.workOrders.findById(id);
+  private async load(workOrders: TransactionalRepositories['workOrders'], id: string): Promise<WorkOrder> {
+    const wo = await workOrders.findById(id, { lock: true });
     if (!wo) throw new NotFoundError('Work order', id);
     return wo;
   }
