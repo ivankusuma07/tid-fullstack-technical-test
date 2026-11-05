@@ -4,6 +4,7 @@ import { Modal } from '../../components/Modal';
 import { Field, Input, Select, Textarea } from '../../components/ui';
 import { useVehicles } from '../../hooks/useWorkOrders';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
+import { useNow } from '../../hooks/useNow';
 import { browserTimeZone, toIso, toLocalInput } from '../../lib/datetime';
 
 interface Props {
@@ -21,7 +22,7 @@ export function WorkOrderFormModal({ workOrder, onClose, onCreated }: Props) {
   const [vehicleId, setVehicleId] = useState(workOrder?.vehicle.id ?? '');
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const [breakdownTime, setBreakdownTime] = useState(toLocalInput(workOrder?.breakdownTime ?? new Date()));
-  const maxLocal = toLocalInput(new Date());
+  const maxLocal = toLocalInput(useNow());
 
   const mutation = workOrder ? editDraft : create;
 

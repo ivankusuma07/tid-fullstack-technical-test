@@ -3,12 +3,14 @@ import type { WorkOrder } from '../../api/types';
 import { Modal } from '../../components/Modal';
 import { Field, Input } from '../../components/ui';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
+import { useNow } from '../../hooks/useNow';
 import { browserTimeZone, formatDateTime, toIso, toLocalInput } from '../../lib/datetime';
 
 /** Admin: input the end date (local time). Bounds match the backend: >= start date, <= now. */
 export function CompleteWorkOrderModal({ workOrder, onClose }: { workOrder: WorkOrder; onClose: () => void }) {
   const { complete } = useWorkOrderActions();
   const [endDate, setEndDate] = useState(toLocalInput(new Date()));
+  const now = useNow();
 
   /**
    * datetime-local only has minute precision, while start_date has seconds. If the Admin picks the
@@ -36,7 +38,7 @@ export function CompleteWorkOrderModal({ workOrder, onClose }: { workOrder: Work
           type="datetime-local"
           required
           min={workOrder.startDate ? toLocalInput(workOrder.startDate) : undefined}
-          max={toLocalInput(new Date())}
+          max={toLocalInput(now)}
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
         />
