@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { StatusBadge } from '../../components/StatusBadge';
-import { Card, Icon, Spinner } from '../../components/ui';
+import { ArrowLeft } from 'lucide-react';
+import { Card, Spinner } from '../../components/ui';
 import { useWorkOrder } from '../../hooks/useWorkOrders';
 import { formatDateTime } from '../../lib/datetime';
 import { ActionBar } from './ActionBar';
@@ -26,7 +27,7 @@ export function WorkOrderDetailPage() {
 
   const back = (
     <Link to="/work-orders" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-emerald-700">
-      <Icon name="back" /> Back to list
+      <ArrowLeft className="h-4 w-4" /> Back to list
     </Link>
   );
 

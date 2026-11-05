@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { WorkOrder } from '../../api/types';
 import { Modal } from '../../components/Modal';
+import { Wrench } from 'lucide-react';
 import { Field, Select } from '../../components/ui';
 import { useMechanics } from '../../hooks/useWorkOrders';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
@@ -20,7 +21,7 @@ export function AssignMechanicModal({ workOrder, onClose }: { workOrder: WorkOrd
       onSubmit={() => assign.mutate({ id: workOrder.id, mechanicId }, { onSuccess: onClose })}
     >
       <Field label="Mechanic">
-        <Select required value={mechanicId} onChange={(e) => setMechanicId(e.target.value)} disabled={isLoading}>
+        <Select icon={Wrench} required value={mechanicId} onChange={(e) => setMechanicId(e.target.value)} disabled={isLoading}>
           <option value="" disabled>
             Select a mechanic…
           </option>

@@ -1,7 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useActor } from '../context/ActorContext';
 import { ActorSelector } from './ActorSelector';
-import { Icon, Spinner } from './ui';
+import { ClipboardList, Wrench } from 'lucide-react';
+import { Spinner } from './ui';
 
 export function Layout() {
   const { isLoading, error, actor } = useActor();
@@ -11,7 +12,7 @@ export function Layout() {
       <aside className="hidden w-60 shrink-0 flex-col bg-gradient-to-b from-emerald-600 to-teal-400 text-white md:flex">
         <div className="flex items-center gap-2 px-5 py-6">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
-            <Icon name="wrench" className="h-5 w-5" />
+            <Wrench className="h-5 w-5" />
           </div>
           <div className="leading-tight">
             <div className="font-semibold">Work Order</div>
@@ -27,7 +28,7 @@ export function Layout() {
               }`
             }
           >
-            <Icon name="box" /> Work Order
+            <ClipboardList className="h-4 w-4" /> Work Order
           </NavLink>
         </nav>
       </aside>

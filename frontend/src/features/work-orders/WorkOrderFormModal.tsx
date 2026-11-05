@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { WorkOrder, WorkOrderDetail } from '../../api/types';
 import { Modal } from '../../components/Modal';
+import { Truck } from 'lucide-react';
 import { Field, Input, Select, Textarea } from '../../components/ui';
 import { useVehicles } from '../../hooks/useWorkOrders';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
@@ -49,7 +50,7 @@ export function WorkOrderFormModal({ workOrder, onClose, onCreated }: Props) {
       submitting={mutation.isPending}
     >
       <Field label="Vehicle (fleet number)">
-        <Select required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={loadingVehicles} autoFocus>
+        <Select icon={Truck} required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={loadingVehicles} autoFocus>
           <option value="" disabled>
             {loadingVehicles ? 'Loading vehicles…' : 'Select a vehicle…'}
           </option>

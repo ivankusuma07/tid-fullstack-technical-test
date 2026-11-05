@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { WorkOrderStatus } from '../../api/types';
 import { Pagination } from '../../components/Pagination';
 import { STATUS_LABEL, StatusBadge } from '../../components/StatusBadge';
-import { Button, Icon, Input, Select, Spinner } from '../../components/ui';
+import { Eye, ListFilter, Plus, Search } from 'lucide-react';
+import { Button, Input, Select, Spinner } from '../../components/ui';
 import { useActor } from '../../context/ActorContext';
 import { useWorkOrderList } from '../../hooks/useWorkOrders';
 import { formatDateTime } from '../../lib/datetime';
@@ -56,10 +57,11 @@ export function WorkOrderListPage() {
           placeholder="Search title, WO number, fleet number…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
+          icon={Search}
+          className="w-full max-w-xs"
           aria-label="Search"
         />
-        <Select value={status} onChange={(e) => setStatus(e.target.value as WorkOrderStatus | '')} className="max-w-48" aria-label="Status filter">
+        <Select value={status} onChange={(e) => setStatus(e.target.value as WorkOrderStatus | '')} icon={ListFilter} className="w-48" aria-label="Status filter">
           <option value="">All statuses</option>
           {(Object.keys(STATUS_LABEL) as WorkOrderStatus[])
             // A mechanic's work orders are always assigned, so draft / submitted never apply.
@@ -74,7 +76,7 @@ export function WorkOrderListPage() {
         <div className="ml-auto">
           {actor?.role === 'ADMIN' && (
             <Button variant="primary" onClick={() => setCreating(true)}>
-              <Icon name="plus" /> Add New Work Order
+              <Plus className="h-4 w-4" /> Add New Work Order
             </Button>
           )}
         </div>
@@ -139,7 +141,7 @@ export function WorkOrderListPage() {
                         aria-label={`View ${wo.woNumber}`}
                         className="rounded-lg border border-slate-300 p-1.5 text-slate-600 hover:bg-slate-50"
                       >
-                        <Icon name="eye" className="h-3.5 w-3.5" />
+                        <Eye className="h-3.5 w-3.5" />
                       </Link>
                       <ActionBar workOrder={wo} size="sm" />
                     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { WorkOrder, WorkOrderAction } from '../../api/types';
-import { Button, Icon } from '../../components/ui';
+import { CircleCheckBig, ClipboardCheck, FilePenLine, PackagePlus, Pencil, Play, Send, Trash2, UserPlus } from 'lucide-react';
+import { Button } from '../../components/ui';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
 import { AssignMechanicModal } from './AssignMechanicModal';
 import { CompleteWorkOrderModal } from './CompleteWorkOrderModal';
@@ -36,47 +37,47 @@ export function ActionBar({ workOrder, size = 'md', onDeleted }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         {has('EDIT') && (
           <Button size={size} onClick={() => setOpen('edit')}>
-            <Icon name="pencil" className={iconSize} /> Edit
+            <Pencil className={iconSize} /> Edit
           </Button>
         )}
         {has('DELETE') && (
           <Button size={size} onClick={() => setOpen('delete')} className="text-red-600">
-            <Icon name="trash" className={iconSize} /> Delete
+            <Trash2 className={iconSize} /> Delete
           </Button>
         )}
         {has('SUBMIT') && (
           <Button size={size} variant="primary" disabled={submit.isPending} onClick={() => submit.mutate(workOrder.id)}>
-            <Icon name="send" className={iconSize} /> Submit
+            <Send className={iconSize} /> Submit
           </Button>
         )}
         {has('ASSIGN') && (
           <Button size={size} variant="primary" onClick={() => setOpen('assign')}>
-            <Icon name="user" className={iconSize} /> {workOrder.assignedMechanic ? 'Reassign' : 'Assign'} Mechanic
+            <UserPlus className={iconSize} /> {workOrder.assignedMechanic ? 'Reassign' : 'Assign'} Mechanic
           </Button>
         )}
         {has('UPDATE') && (
           <Button size={size} variant="primary" onClick={() => setOpen('update')}>
-            <Icon name="pencil" className={iconSize} /> Update (Lanjutan)
+            <FilePenLine className={iconSize} /> Update (Lanjutan)
           </Button>
         )}
         {has('REQUEST_SPAREPART') && (
           <Button size={size} onClick={() => setOpen('request')}>
-            <Icon name="box" className={iconSize} /> Request Sparepart
+            <PackagePlus className={iconSize} /> Request Sparepart
           </Button>
         )}
         {(has('APPROVE_SPAREPART') || has('REJECT_SPAREPART')) && (
           <Button size={size} variant="primary" onClick={() => setOpen('review')}>
-            <Icon name="check" className={iconSize} /> Review Sparepart
+            <ClipboardCheck className={iconSize} /> Review Sparepart
           </Button>
         )}
         {has('START') && (
           <Button size={size} variant="primary" disabled={start.isPending} onClick={() => start.mutate(workOrder.id)}>
-            <Icon name="play" className={iconSize} /> Start Working
+            <Play className={iconSize} /> Start Working
           </Button>
         )}
         {has('COMPLETE') && (
           <Button size={size} variant="primary" onClick={() => setOpen('complete')}>
-            <Icon name="flag" className={iconSize} /> Complete
+            <CircleCheckBig className={iconSize} /> Complete
           </Button>
         )}
       </div>

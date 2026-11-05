@@ -1,3 +1,4 @@
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 /** Small shared primitives so every screen looks the same. */
@@ -40,16 +41,37 @@ export function Field({ label, hint, children }: { label: string; hint?: ReactNo
 const control =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 focus:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400';
 
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${control} ${props.className ?? ''}`} />;
+/** Leading icon inside a control; the control gets extra left padding to make room. */
+function LeadingIcon({ icon: IconCmp }: { icon: LucideIcon }) {
+  return <IconCmp aria-hidden className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />;
+}
+
+type WithIcon = { icon?: LucideIcon };
+
+/** With an icon, `className` goes on the wrapper (so layout classes like max-w-xs still apply). */
+export function Input({ icon, className = '', ...props }: InputHTMLAttributes<HTMLInputElement> & WithIcon) {
+  if (!icon) return <input {...props} className={`${control} ${className}`} />;
+  return (
+    <div className={`relative ${className}`}>
+      <LeadingIcon icon={icon} />
+      <input {...props} className={`${control} pl-9`} />
+    </div>
+  );
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea rows={3} {...props} className={`${control} ${props.className ?? ''}`} />;
 }
 
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${control} ${props.className ?? ''}`} />;
+/** Native select with a consistent chevron (and optional leading icon). `className` goes on the wrapper. */
+export function Select({ icon, className = '', ...props }: SelectHTMLAttributes<HTMLSelectElement> & WithIcon) {
+  return (
+    <div className={`relative ${className}`}>
+      {icon && <LeadingIcon icon={icon} />}
+      <select {...props} className={`${control} cursor-pointer appearance-none pr-9 ${icon ? 'pl-9' : ''}`} />
+      <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    </div>
+  );
 }
 
 export function Card({ title, actions, children }: { title?: ReactNode; actions?: ReactNode; children: ReactNode }) {
@@ -72,30 +94,5 @@ export function Spinner({ label = 'Loading…' }: { label?: string }) {
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
       {label}
     </div>
-  );
-}
-
-type IconName = 'eye' | 'pencil' | 'plus' | 'trash' | 'send' | 'user' | 'wrench' | 'check' | 'play' | 'flag' | 'box' | 'back';
-
-const paths: Record<IconName, string> = {
-  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
-  pencil: 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z',
-  plus: 'M12 5v14 M5 12h14',
-  trash: 'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6',
-  send: 'M22 2 11 13 M22 2l-7 20-4-9-9-4 20-7Z',
-  user: 'M20 21a8 8 0 0 0-16 0 M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z',
-  wrench: 'M14.7 6.3a4 4 0 0 0 5 5L22 14l-8 8-2.3-2.3a4 4 0 0 0-5-5L2 10l8-8 2.3 2.3a4 4 0 0 0 2.4 2Z',
-  check: 'M20 6 9 17l-5-5',
-  play: 'M6 4l14 8-14 8V4Z',
-  flag: 'M4 22V4 M4 4h13l-2 4 2 4H4',
-  box: 'M21 8 12 3 3 8v8l9 5 9-5V8Z M3 8l9 5 9-5 M12 13v8',
-  back: 'M19 12H5 M12 19l-7-7 7-7',
-};
-
-export function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
-      <path d={paths[name]} />
-    </svg>
   );
 }

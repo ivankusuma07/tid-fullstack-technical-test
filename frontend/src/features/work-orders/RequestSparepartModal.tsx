@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { SparepartItemInput, WorkOrder } from '../../api/types';
 import { Modal } from '../../components/Modal';
-import { Button, Field, Icon, Input, Textarea } from '../../components/ui';
+import { Plus, Trash2 } from 'lucide-react';
+import { Button, Field, Input, Textarea } from '../../components/ui';
 import { useWorkOrderActions } from '../../hooks/useWorkOrderActions';
 
 /** Mechanic: "Yes, spareparts are needed" with a required note and one or more items. */
@@ -59,13 +60,13 @@ export function RequestSparepartModal({ workOrder, onClose }: { workOrder: WorkO
                 disabled={items.length === 1}
                 onClick={() => setItems((rows) => rows.filter((_, idx) => idx !== i))}
               >
-                <Icon name="trash" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
         </div>
         <Button size="sm" className="mt-2" onClick={() => setItems((rows) => [...rows, { name: '', qty: 1 }])}>
-          <Icon name="plus" className="h-3.5 w-3.5" /> Add item
+          <Plus className="h-3.5 w-3.5" /> Add item
         </Button>
       </div>
     </Modal>
