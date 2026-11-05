@@ -28,7 +28,9 @@ export function WorkflowStepper({ workOrder }: { workOrder: WorkOrderDetail }) {
   const reached = (state: StepState) => state !== 'upcoming';
 
   return (
-    <ol className="flex items-start overflow-x-auto pb-1">
+    // overflow-x-auto also clips vertically, so leave room (py-5) for the current step's pulse, which grows to 2x;
+    // the negative margin keeps the card the same height.
+    <ol className="-my-4 flex items-start overflow-x-auto py-5">
       {steps.map((s, i) => {
         const StepIcon = STEP_ICON[s.label] ?? Check;
         return (
