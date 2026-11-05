@@ -102,7 +102,6 @@ export interface Page<T> {
 
 export interface WorkOrderListParams {
   status?: WorkOrderStatus;
-  scope?: 'all' | 'mine';
   search?: string;
   page?: number;
   limit?: number;

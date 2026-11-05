@@ -1,8 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { IsIsoDateTime } from '../../../common/validation/is-iso-date-time';
-import { ListScope } from '../application/work-order.inputs';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
 
 export class CreateWorkOrderDto {
@@ -85,11 +84,6 @@ export class ListWorkOrdersQueryDto {
   @IsOptional()
   @IsEnum(WorkOrderStatus)
   status?: WorkOrderStatus;
-
-  @ApiPropertyOptional({ enum: ['all', 'mine'], description: 'Mechanics only; defaults to "mine" for mechanics' })
-  @IsOptional()
-  @IsIn(['all', 'mine'])
-  scope?: ListScope;
 
   @ApiPropertyOptional({ description: 'Matches title, WO number or fleet number' })
   @IsOptional()

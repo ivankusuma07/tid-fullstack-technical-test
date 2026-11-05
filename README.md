@@ -98,7 +98,7 @@ Use the **Acting as** selector in the header to switch roles. The **Admin / SPV 
 6. **Mechanic (Budi)**: **Start Working**. The start date is set by the server.
 7. **Admin**: **Complete**, enter the end date. Status becomes **Completed**.
 
-Things worth trying: switch to *Rudi*, who sees nothing to do on Budi's work order. As a mechanic, toggle **Assigned to me / All**. Try the API directly with a wrong role and see the 403/409 messages.
+Things worth trying: switch to *Rudi*, who doesn't see Budi's work orders at all (mechanics only see the ones assigned to them). Try the API directly with a wrong role and see the 403/409 messages.
 
 ---
 
@@ -184,7 +184,7 @@ All endpoints are under `/api`. Every endpoint except `POST /auth/login`, `GET /
 |--------|------|------|--------|
 | POST | `/auth/login` | public | Body: `{ userId }` → `{ accessToken, tokenType, expiresIn, user }` |
 | GET | `/auth/me` | any | The token's user |
-| GET | `/work-orders?status=&scope=all\|mine&search=&page=&limit=` | any | Paginated list (search: title / WO number / fleet number) |
+| GET | `/work-orders?status=&search=&page=&limit=` | any | Paginated list (search: title / WO number / fleet number). Mechanics only get their own |
 | GET | `/work-orders/:id` | any | Detail with vehicle, mechanic, sparepart request history and activity timeline |
 | POST | `/work-orders` | ADMIN | Create → `DRAFT`. Body: `{ title, description?, vehicleId, breakdownTime }` |
 | PATCH | `/work-orders/:id` | ADMIN | Edit while `DRAFT` |
@@ -244,7 +244,7 @@ Follows the ERD in the brief (UUID primary keys, every timestamp is `timestamptz
 9. Users are seeded. There is no user-management UI.
 10. Statuses were simplified to 8 states, which the brief allows.
 11. The Admin can **edit or delete a work order while it is `DRAFT`**. Delete is a hard delete, which is safe because nobody else has acted on a draft. After submission, changes only happen through workflow steps. A cancel flow (`CANCELLED`) is out of scope.
-12. **Visibility:** Admin and SPV see all work orders. Mechanics default to the ones assigned to them and can switch to "All" as a read-only view. Drafts are never shown to mechanics.
+12. **Visibility:** Admin and SPV see all work orders. A mechanic only sees the work orders assigned to them, in the list and on the detail page. Any other id returns 404, so they can't probe which work orders exist. If the SPV reassigns a work order, it moves to the new mechanic's list.
 13. **Dates and timezones:** everything is stored as `timestamptz` (UTC) and exchanged as ISO 8601 **with an offset** (values without one are rejected as ambiguous). Date inputs use the browser's local time, and every date is shown in the viewer's timezone.
 14. **From the mockup:** each WO references a **vehicle** (fleet number from the `vehicles` master table, picked from a dropdown) and has a **breakdown time** (when the vehicle broke down, ≤ now) and a readable **WO number** (`WO-YYYYMMDD-0001`, from a Postgres sequence). Vehicles are seeded; there is no vehicle-management UI.
 15. **Activity timeline:** every workflow step is logged with actor, status change and note (e.g. the assigned mechanic or the SPV's reason). Deleting a draft deletes its timeline too.

@@ -21,11 +21,8 @@ export interface UpdateWorkOrderInput {
   description?: string | null;
 }
 
-export type ListScope = 'all' | 'mine';
-
 export interface ListWorkOrdersInput {
   status?: WorkOrderStatus;
-  scope?: ListScope;
   search?: string;
   page?: number;
   limit?: number;

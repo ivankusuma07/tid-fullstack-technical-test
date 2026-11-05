@@ -7,8 +7,6 @@ export interface WorkOrderListCriteria {
   status?: WorkOrderStatus;
   /** Only work orders assigned to this mechanic. */
   assignedMechanicId?: string;
-  /** Statuses hidden from the actor (mechanics never see DRAFT). */
-  excludeStatuses?: WorkOrderStatus[];
   /** Matches title, WO number or fleet number (case-insensitive). */
   search?: string;
   page: number;

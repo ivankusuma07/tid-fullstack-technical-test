@@ -160,7 +160,7 @@ Rules:
 
 ### 4.4 Endpoints
 Required (from the brief):
-- `GET  /api/work-orders` (query: `status?`, `scope?=all|mine`, `page?`, `limit?`, `search?` matching title / WO number / fleet number); returns list + `availableActions` per row (visibility rules in 4.6)
+- `GET  /api/work-orders` (query: `status?`, `page?`, `limit?`, `search?` matching title / WO number / fleet number); returns list + `availableActions` per row (visibility rules in 4.6)
 - `POST /api/work-orders` — `{ title, description?, fleetNumber, breakdownTime }` (`breakdownTime` is an ISO 8601 string)
 - `POST /api/work-orders/:id/submit`
 - `POST /api/work-orders/:id/assign` — `{ mechanicId }`
@@ -189,15 +189,14 @@ Error mapping: NotFound → 404, InvalidTransition → 409, Forbidden (wrong rol
 - Optional: one e2e test (supertest) that runs the full flow against the compose DB.
 
 ### 4.6 List visibility per role
-| Role     | Default scope | Can switch to |
-|----------|---------------|---------------|
-| ADMIN    | all           | — |
-| SPV      | all           | — |
-| MECHANIC | `mine` (WOs where `assigned_mechanic_id = actor.id`) | `all` (read-only view; actions still come from `availableActions`, so nothing new becomes possible) |
+| Role     | Sees |
+|----------|------|
+| ADMIN    | all work orders |
+| SPV      | all work orders |
+| MECHANIC | only WOs where `assigned_mechanic_id = actor.id` (list and detail; anything else is 404) |
 
-- The default is chosen in the **service** from the actor's role when `scope` is omitted, not in the controller and not only in the frontend.
-- `scope=mine` for Admin/SPV is ignored (they always see all).
-- Mechanics can't see `DRAFT` work orders, even in `all` scope: a draft isn't submitted yet, so it isn't their business.
+- Enforced in the **service** from the actor's role, not in the controller and not only in the frontend. No query parameter can widen it.
+- So drafts and unassigned submitted WOs are never visible to mechanics.
 
 ---
 
@@ -233,7 +232,7 @@ frontend/src/
 ### 5.3 Pages & behaviour
 - **Header:** Actor selector. Pick a role (Admin/SPV/Mechanic), then a user with that role (needed so two mechanics can be told apart). Changing it refetches queries.
 - **Work Order List:** table, similar to the mockup's column order (No, Fleet Number, WO Number, Title, Breakdown Time, Start Date, End Date, Status badge, Mechanic, Actions). The search box matches title, WO number and fleet number. Status filter + simple pagination. "Create Work Order" shown only when `role === ADMIN`.
-  - When the actor is a mechanic, an **"Assigned to me / All"** toggle appears, defaulting to "Assigned to me" (maps to `scope=mine|all`). Admin and SPV get no toggle.
+  - When the actor is a mechanic, the list only contains their assigned work orders (no toggle).
   - Empty state for a mechanic with nothing assigned: "No work orders assigned to you yet."
 - **Edit draft (Admin):** an "Edit" button appears only while the WO is `DRAFT`, which comes for free from `availableActions`. It opens the same form as Create, pre-filled.
 - **Delete draft (Admin):** a "Delete" button, also only while `DRAFT` (from `availableActions`). It opens a confirm dialog built with the app's own Modal, not `window.confirm`: "Delete WO-… ? This can't be undone." After deleting from the detail page, go back to the list and show a success toast.
@@ -327,7 +326,7 @@ work-order-system/
 **Phase 4 — Frontend (≈3h)**
 - [ ] API client + types, ActorContext + selector
 - [ ] `lib/datetime.ts` (`toIso`, `formatDateTime`), used for every date
-- [ ] List page (table, badges, status filter, mechanic "Assigned to me / All" toggle, create modal)
+- [ ] List page (table, badges, status filter, mechanic sees only assigned WOs, create modal)
 - [ ] Detail page + ActionBar driven by `availableActions`
 - [ ] Edit draft / Delete draft / Assign / Update / Request Sparepart / Approve–Reject / Start / Complete interactions
 - [ ] Error + success toasts, loading/empty states
@@ -362,7 +361,7 @@ work-order-system/
 9. Users are seeded. There is no user-management UI.
 10. Status values were simplified into 8 states, as the brief allows.
 11. The Admin can edit (`PATCH`) or delete (`DELETE`) a work order while it is `DRAFT`. Deleting is a hard delete, which is safe because no one else has acted on a draft yet. After submission, changes only happen through workflow steps and work orders can't be deleted. A full cancel flow (`CANCELLED` status) is out of scope.
-12. Admin and SPV see all work orders. Mechanics default to the ones assigned to them and can switch to "All" as a read-only view; drafts are never shown to mechanics.
+12. Admin and SPV see all work orders. Mechanics only see the ones assigned to them.
 13. All timestamps are stored as `timestamptz` (UTC) and exchanged as ISO 8601. The end date is entered in the browser's local time, and every date is shown in the viewer's browser timezone.
 14. **Added from the mockup:** each WO stores the vehicle's `fleet_number` (free text, normalized to uppercase) and a `breakdown_time` (when the vehicle broke down, ≤ now). Breakdown time is per WO because each breakdown is one WO. Fleet number really belongs to a vehicle; it's kept as a column for now, with a `vehicles` master table as the next step.
 15. The mockup's **Picker** column (warehouse staff who pick spareparts from inventory, after approval) is out of scope: it needs a fourth role and an inventory flow that the brief doesn't include.
@@ -388,7 +387,7 @@ work-order-system/
 - [ ] All three paths complete end to end **in the UI**: no sparepart, approved, rejected → revised → approved
 - [ ] The brief's minimum flow still works exactly as written (extensions don't block it)
 - [ ] Wrong role / wrong status attempts are rejected by the API with clear messages (including editing or deleting a non-draft)
-- [ ] A mechanic lands on "Assigned to me"; Admin/SPV see everything
+- [ ] A mechanic only sees work orders assigned to them; Admin/SPV see everything
 - [ ] The end date entered in local time shows back as the same local time after reload
 - [ ] Git history has one commit (or more) per phase, ending in tag `v1.0`
 - [ ] Controllers are thin, services depend on repository interfaces, the policy is unit-tested

@@ -26,7 +26,7 @@ export class WorkOrdersController {
   constructor(private readonly service: WorkOrdersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List work orders (scope defaults by role)' })
+  @ApiOperation({ summary: 'List work orders (mechanics only see the ones assigned to them)' })
   list(@CurrentActor() actor: Actor, @Query() q: ListWorkOrdersQueryDto) {
     return this.service.list(actor, q);
   }

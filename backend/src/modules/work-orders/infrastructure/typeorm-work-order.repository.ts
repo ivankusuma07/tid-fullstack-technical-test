@@ -64,7 +64,6 @@ export class TypeOrmWorkOrderRepository implements WorkOrderRepository {
 
     if (c.status) qb.andWhere('wo.status = :status', { status: c.status });
     if (c.assignedMechanicId) qb.andWhere('wo.assignedMechanicId = :mid', { mid: c.assignedMechanicId });
-    if (c.excludeStatuses?.length) qb.andWhere('wo.status NOT IN (:...excluded)', { excluded: c.excludeStatuses });
     if (c.search) {
       const term = `%${c.search.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
       qb.andWhere(

@@ -214,12 +214,16 @@ describe('Work order workflow (e2e)', () => {
     expect(wo.body.activities.filter((a: { action: string }) => a.action === 'APPROVE_SPAREPART')).toHaveLength(1);
   });
 
-  it('lists: mechanic defaults to own work orders, search matches fleet number', async () => {
+  it('lists: mechanics only see their own work orders, search matches fleet number', async () => {
     const mine = await as('Budi').get('/work-orders').expect(200);
+    expect(mine.body.total).toBeGreaterThan(0);
     expect(mine.body.items.every((w: { assignedMechanic: { id: string } }) => w.assignedMechanic.id === id('Budi'))).toBe(true);
 
     const rudi = await as('Rudi').get('/work-orders').expect(200);
     expect(rudi.body.total).toBe(0);
+    await as('Rudi').get(`/work-orders/${mine.body.items[0].id}`).expect(404);
+    // The old "show all" escape hatch is gone.
+    await as('Budi').get('/work-orders?scope=all').expect(400);
 
     const found = await as('Andi').get(`/work-orders?search=${SEED_VEHICLES[0].fleetNumber.toLowerCase()}`).expect(200);
     expect(found.body.total).toBeGreaterThan(0);

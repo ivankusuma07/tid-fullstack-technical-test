@@ -282,37 +282,50 @@ describe('WorkOrdersService', () => {
   });
 
   describe('list scoping', () => {
-    it('mechanic defaults to "mine" and never sees drafts', async () => {
+    it('mechanic only sees work orders assigned to them', async () => {
       const { service, createWo, toUpdated } = setup();
       await createWo('Still a draft');
       const mineId = await toUpdated();
+
+      const unassigned = await createWo('Submitted, not assigned yet');
+      await service.submit(admin, unassigned.id);
 
       const other = await createWo('Rudi job');
       await service.submit(admin, other.id);
       await service.assign(spv, other.id, rudi.id);
 
-      const mine = await service.list(budi);
-      expect(mine.items.map((w) => w.id)).toEqual([mineId]);
-
-      const all = await service.list(budi, { scope: 'all' });
-      expect(all.total).toBe(2);
-      expect(all.items.every((w) => w.status !== S.DRAFT)).toBe(true);
-      // read-only: Budi has no actions on Rudi's work order
-      expect(all.items.find((w) => w.id === other.id)!.availableActions).toEqual([]);
+      expect((await service.list(budi)).items.map((w) => w.id)).toEqual([mineId]);
+      expect((await service.list(rudi)).items.map((w) => w.id)).toEqual([other.id]);
     });
 
-    it('Admin and SPV always see everything, "mine" is ignored', async () => {
+    it('Admin and SPV always see everything', async () => {
       const { service, createWo, toUpdated } = setup();
       await createWo('Draft');
       await toUpdated();
-      expect((await service.list(admin, { scope: 'mine' })).total).toBe(2);
+      expect((await service.list(admin)).total).toBe(2);
       expect((await service.list(spv)).total).toBe(2);
     });
 
-    it('mechanic cannot open a draft by id', async () => {
+    it('mechanic cannot open a work order that is not assigned to them', async () => {
+      const { service, createWo, toUpdated } = setup();
+      const draft = await createWo();
+      await expect(service.getById(budi, draft.id)).rejects.toThrow(NotFoundError);
+
+      const mineId = await toUpdated();
+      await expect(service.getById(budi, mineId)).resolves.toMatchObject({ id: mineId });
+      await expect(service.getById(rudi, mineId)).rejects.toThrow(NotFoundError);
+    });
+
+    it('a reassigned work order disappears from the previous mechanic', async () => {
       const { service, createWo } = setup();
-      const wo = await createWo();
-      await expect(service.getById(budi, wo.id)).rejects.toThrow(NotFoundError);
+      const { id } = await createWo();
+      await service.submit(admin, id);
+      await service.assign(spv, id, budi.id);
+      expect((await service.list(budi)).total).toBe(1);
+      await service.assign(spv, id, rudi.id);
+      expect((await service.list(budi)).total).toBe(0);
+      await expect(service.getById(budi, id)).rejects.toThrow(NotFoundError);
+      await expect(service.getById(rudi, id)).resolves.toMatchObject({ id });
     });
 
     it('search matches title, WO number and fleet number', async () => {

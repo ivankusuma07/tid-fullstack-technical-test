@@ -28,27 +28,23 @@ export function WorkOrderListPage() {
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<WorkOrderStatus | ''>('');
-  const [scope, setScope] = useState<'mine' | 'all'>('mine');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [creating, setCreating] = useState(false);
   const debouncedSearch = useDebounced(search);
 
   // Back to page 1 whenever the filter (or the actor) changes.
-  useEffect(() => setPage(1), [debouncedSearch, status, scope, limit, actor?.id]);
-  // Each mechanic starts on "Assigned to me".
-  useEffect(() => setScope('mine'), [actor?.id]);
+  useEffect(() => setPage(1), [debouncedSearch, status, limit, actor?.id]);
 
   const { data, isLoading, isFetching, error } = useWorkOrderList({
     search: debouncedSearch || undefined,
     status: status || undefined,
-    scope: isMechanic ? scope : undefined,
     page,
     limit,
   });
 
   const emptyMessage =
-    isMechanic && scope === 'mine' && !debouncedSearch && !status
+    isMechanic && !debouncedSearch && !status
       ? 'No work orders assigned to you yet.'
       : 'No work orders match the filters.';
 
@@ -66,29 +62,15 @@ export function WorkOrderListPage() {
         <Select value={status} onChange={(e) => setStatus(e.target.value as WorkOrderStatus | '')} className="max-w-48" aria-label="Status filter">
           <option value="">All statuses</option>
           {(Object.keys(STATUS_LABEL) as WorkOrderStatus[])
-            .filter((s) => !(isMechanic && s === 'DRAFT'))
+            // A mechanic's work orders are always assigned, so draft / submitted never apply.
+            .filter((s) => !(isMechanic && (s === 'DRAFT' || s === 'SUBMITTED')))
             .map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
             ))}
         </Select>
-        {isMechanic && (
-          <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-sm" role="radiogroup" aria-label="Scope">
-            {(['mine', 'all'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                role="radio"
-                aria-checked={scope === s}
-                onClick={() => setScope(s)}
-                className={`rounded-md px-3 py-1 font-medium ${scope === s ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600'}`}
-              >
-                {s === 'mine' ? 'Assigned to me' : 'All'}
-              </button>
-            ))}
-          </div>
-        )}
+        {isMechanic && <span className="text-sm text-slate-500">Showing work orders assigned to you</span>}
         <div className="ml-auto">
           {actor?.role === 'ADMIN' && (
             <Button variant="primary" onClick={() => setCreating(true)}>

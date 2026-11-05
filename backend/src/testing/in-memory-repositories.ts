@@ -164,7 +164,6 @@ export class InMemoryWorkOrderRepository implements WorkOrderRepository {
     const filtered = this.rows
       .filter((r) => !c.status || r.status === c.status)
       .filter((r) => !c.assignedMechanicId || r.assignedMechanicId === c.assignedMechanicId)
-      .filter((r) => !c.excludeStatuses?.includes(r.status))
       .filter(
         (r) => !term || [r.title, r.woNumber, this.vehicles.get(r.vehicleId).fleetNumber].some((f) => f.toLowerCase().includes(term)),
       )

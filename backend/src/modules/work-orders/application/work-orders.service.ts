@@ -13,7 +13,6 @@ import { TransactionalRepositories, UNIT_OF_WORK, UnitOfWork } from './unit-of-w
 import {
   CreateWorkOrderInput,
   EditDraftInput,
-  ListScope,
   ListWorkOrdersInput,
   UpdateWorkOrderInput,
 } from './work-order.inputs';
@@ -38,15 +37,11 @@ export class WorkOrdersService {
   // ---------- queries ----------
 
   async list(actor: Actor, input: ListWorkOrdersInput = {}): Promise<Page<WithActions<WorkOrderView>>> {
-    const scope = this.resolveScope(actor, input.scope);
-    const isMechanic = actor.role === Role.MECHANIC;
-
+    // Mechanics only ever see the work orders assigned to them (never drafts, which are unassigned).
     const page = await this.workOrders.list({
       status: input.status,
       search: input.search?.trim() || undefined,
-      assignedMechanicId: scope === 'mine' ? actor.id : undefined,
-      // A draft is not submitted yet, so it is not a mechanic's business.
-      excludeStatuses: isMechanic ? [WorkOrderStatus.DRAFT] : undefined,
+      assignedMechanicId: actor.role === Role.MECHANIC ? actor.id : undefined,
       page: Math.max(1, input.page ?? 1),
       limit: Math.min(MAX_PAGE_SIZE, Math.max(1, input.limit ?? 10)),
     });
@@ -180,14 +175,9 @@ export class WorkOrdersService {
     return wo;
   }
 
-  /** Default scope comes from the role: mechanics see their own work, Admin/SPV always see everything. */
-  private resolveScope(actor: Actor, requested?: ListScope): ListScope {
-    if (actor.role !== Role.MECHANIC) return 'all';
-    return requested ?? 'mine';
-  }
-
+  /** Admin and SPV see every work order; a mechanic only the ones assigned to them (404 otherwise). */
   private isVisibleTo(wo: WorkOrder, actor: Actor): boolean {
-    return !(actor.role === Role.MECHANIC && wo.status === WorkOrderStatus.DRAFT);
+    return actor.role !== Role.MECHANIC || wo.assignedMechanicId === actor.id;
   }
 
   private withActions<T extends WorkOrder>(wo: T, actor: Actor): WithActions<T> {
