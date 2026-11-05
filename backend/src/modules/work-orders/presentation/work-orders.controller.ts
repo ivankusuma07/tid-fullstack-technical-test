@@ -6,7 +6,6 @@ import { Role } from '../../users/domain/role.enum';
 import { Actor } from '../../users/domain/user';
 import { WorkOrdersService } from '../application/work-orders.service';
 import {
-  AddNoteDto,
   AssignMechanicDto,
   CompleteWorkOrderDto,
   CreateWorkOrderDto,
@@ -98,12 +97,6 @@ export class WorkOrdersController {
   @ApiOperation({ summary: 'UPDATED/READY_TO_WORK -> WORKING (assigned mechanic only)' })
   start(@CurrentActor() actor: Actor, @IdParam() id: string) {
     return this.service.start(actor, id);
-  }
-
-  @Post(':id/notes')
-  @ApiOperation({ summary: 'Add a note to the activity timeline (anyone who can see the work order)' })
-  addNote(@CurrentActor() actor: Actor, @IdParam() id: string, @Body() dto: AddNoteDto) {
-    return this.service.addNote(actor, id, dto.note);
   }
 
   @Post(':id/complete')

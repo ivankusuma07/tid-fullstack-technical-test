@@ -214,24 +214,6 @@ describe('Work order workflow (e2e)', () => {
     expect(wo.body.activities.filter((a: { action: string }) => a.action === 'APPROVE_SPAREPART')).toHaveLength(1);
   });
 
-  it('notes: everyone involved can comment and read them; validation and visibility apply', async () => {
-    const woId = await toUpdated('Notes');
-    await as('Andi').post(`/work-orders/${woId}/notes`, { note: 'Customer needs it Friday' }).expect(201);
-    const res = await as('Budi').post(`/work-orders/${woId}/notes`, { note: 'Checking the radiator first' }).expect(201);
-    expect(res.body.status).toBe('UPDATED');
-
-    const seenBySpv = await as('Siti').get(`/work-orders/${woId}`).expect(200);
-    const notes = seenBySpv.body.activities.filter((a: { action: string }) => a.action === 'NOTE');
-    expect(notes.map((a: { actor: { name: string }; note: string }) => [a.actor.name, a.note])).toEqual([
-      ['Andi (Admin)', 'Customer needs it Friday'],
-      ['Budi (Mechanic)', 'Checking the radiator first'],
-    ]);
-
-    await as('Rudi').post(`/work-orders/${woId}/notes`, { note: 'Hi' }).expect(404);
-    await as('Andi').post(`/work-orders/${woId}/notes`, { note: '' }).expect(400);
-    await as('Andi').post(`/work-orders/${woId}/notes`, { note: 'x'.repeat(1001) }).expect(400);
-  });
-
   it('lists: mechanics only see their own work orders, search matches fleet number', async () => {
     const mine = await as('Budi').get('/work-orders').expect(200);
     expect(mine.body.total).toBeGreaterThan(0);

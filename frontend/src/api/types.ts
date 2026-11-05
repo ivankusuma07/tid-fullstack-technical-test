@@ -74,7 +74,7 @@ export interface SparepartRequest {
   updatedAt: string;
 }
 
-export type ActivityAction = WorkOrderAction | 'CREATE' | 'NOTE';
+export type ActivityAction = WorkOrderAction | 'CREATE';
 
 export interface WorkOrderActivity {
   id: string;
