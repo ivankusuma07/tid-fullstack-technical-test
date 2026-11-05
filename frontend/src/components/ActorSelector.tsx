@@ -43,7 +43,8 @@ export function ActorSelector() {
         value={actor.id}
         onChange={(e) => setActorId(e.target.value)}
         disabled={usersOfRole.length < 2}
-        className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 disabled:bg-slate-50"
+        title={usersOfRole.length < 2 ? 'Only one user has this role' : 'Switch user'}
+        className="cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-800 shadow-sm hover:border-emerald-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 focus:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:font-normal disabled:text-slate-400 disabled:shadow-none"
       >
         {usersOfRole.map((u) => (
           <option key={u.id} value={u.id}>
