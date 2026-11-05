@@ -46,6 +46,7 @@ export const WorkOrderMapper = {
         fromStatus: a.fromStatus,
         toStatus: a.toStatus,
         note: a.note,
+        sparepartRequestId: a.sparepartRequestId,
         createdAt: a.createdAt,
         actor: toUserSummary(a.actor!),
       })),

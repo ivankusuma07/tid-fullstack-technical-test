@@ -206,6 +206,40 @@ describe('WorkOrdersService', () => {
       expect(wo.activities.find((a) => a.action === A.REJECT_SPAREPART)!.note).toBe('Check the clamp first');
     });
 
+    it('links sparepart entries to their request, so the timeline can show the parts', async () => {
+      const { service, spareparts, toUpdated } = setup();
+      const id = await toUpdated();
+      const first = await spareparts.requestSparepart(budi, id, { note: 'Hose cracked', items: [{ name: 'Hose', qty: 1 }] });
+      const firstId = first.sparepartRequests[0].id;
+      await spareparts.reject(spv, firstId, 'Check the clamp first');
+      const second = await spareparts.requestSparepart(budi, id, {
+        note: 'Clamp is fine, hose and coolant needed',
+        items: [
+          { name: 'Hose', qty: 2 },
+          { name: 'Coolant 1L', qty: 4 },
+        ],
+      });
+      const secondId = second.sparepartRequests.find((r) => r.id !== firstId)!.id;
+      await spareparts.approve(spv, secondId);
+      const wo = await service.getById(admin, id);
+
+      expect(wo.activities.map((a) => [a.action, a.sparepartRequestId])).toEqual([
+        ['CREATE', null],
+        [A.SUBMIT, null],
+        [A.ASSIGN, null],
+        [A.UPDATE, null],
+        [A.REQUEST_SPAREPART, firstId],
+        [A.REJECT_SPAREPART, firstId],
+        [A.REQUEST_SPAREPART, secondId],
+        [A.APPROVE_SPAREPART, secondId],
+      ]);
+      const linked = wo.sparepartRequests.find((r) => r.id === secondId)!;
+      expect(linked.items.map((i) => [i.name, i.qty])).toEqual([
+        ['Hose', 2],
+        ['Coolant 1L', 4],
+      ]);
+    });
+
     it('a rejected step leaves no timeline entry', async () => {
       const { service, toUpdated } = setup();
       const id = await toUpdated();

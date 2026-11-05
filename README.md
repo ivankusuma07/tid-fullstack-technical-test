@@ -225,7 +225,7 @@ Follows the ERD in the brief (UUID primary keys, every timestamp is `timestamptz
 - **work_orders**: `id, wo_number*, title, description, vehicle_id* → vehicles, breakdown_time*, status, created_by → users, assigned_mechanic_id → users, start_date, end_date, created_at, updated_at`
 - **sparepart_requests**: `id, work_order_id → work_orders, status (PENDING|APPROVED|REJECTED*), request_note*, requested_by → users, approved_by → users, approval_note, created_at, updated_at`
 - **sparepart_items**: `id, sparepart_request_id → sparepart_requests, name, qty (> 0), created_at, updated_at`
-- **work_order_activities***: `id, work_order_id → work_orders, actor_id → users, action, from_status, to_status, note, created_at`
+- **work_order_activities***: `id, work_order_id → work_orders, actor_id → users, action, from_status, to_status, note, sparepart_request_id → sparepart_requests (sparepart steps only), created_at`
 
 \* Columns or values added on top of the brief's minimum (see the assumptions below).
 

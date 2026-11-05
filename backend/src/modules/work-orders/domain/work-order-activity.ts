@@ -15,6 +15,8 @@ export interface WorkOrderActivity {
   toStatus: WorkOrderStatus | null;
   /** Context for the step, e.g. the assigned mechanic or the SPV's review note. */
   note: string | null;
+  /** The sparepart request a REQUEST / APPROVE / REJECT_SPAREPART entry is about; null otherwise. */
+  sparepartRequestId: string | null;
   createdAt: Date;
 }
 
@@ -22,4 +24,6 @@ export interface WorkOrderActivityView extends WorkOrderActivity {
   actor: UserSummary;
 }
 
-export type NewWorkOrderActivity = Omit<WorkOrderActivity, 'id' | 'createdAt'>;
+export type NewWorkOrderActivity = Omit<WorkOrderActivity, 'id' | 'createdAt' | 'sparepartRequestId'> & {
+  sparepartRequestId?: string | null;
+};

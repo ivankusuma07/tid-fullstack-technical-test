@@ -36,6 +36,9 @@ export class WorkOrderActivityOrmEntity {
   @Column({ type: 'text', nullable: true })
   note: string | null;
 
+  @Column({ name: 'sparepart_request_id', type: 'uuid', nullable: true })
+  sparepartRequestId: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

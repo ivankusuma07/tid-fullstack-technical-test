@@ -42,7 +42,7 @@ export class SparepartRequestsService {
       if (await sparepartRequests.findPendingByWorkOrder(wo.id)) {
         throw new InvalidTransitionError('This work order already has a pending sparepart request');
       }
-      await sparepartRequests.create({ workOrderId: wo.id, requestNote: note, requestedById: actor.id, items });
+      const request = await sparepartRequests.create({ workOrderId: wo.id, requestNote: note, requestedById: actor.id, items });
       wo.status = next;
       await workOrders.save(wo);
       await activities.record({
@@ -52,6 +52,7 @@ export class SparepartRequestsService {
         fromStatus: from,
         toStatus: next,
         note,
+        sparepartRequestId: request.id,
       });
     });
 
@@ -99,6 +100,7 @@ export class SparepartRequestsService {
         fromStatus: from,
         toStatus: next,
         note: request.approvalNote,
+        sparepartRequestId: request.id,
       });
       return wo.id;
     });

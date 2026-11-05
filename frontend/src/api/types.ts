@@ -82,6 +82,8 @@ export interface WorkOrderActivity {
   fromStatus: WorkOrderStatus | null;
   toStatus: WorkOrderStatus | null;
   note: string | null;
+  /** Set on REQUEST / APPROVE / REJECT_SPAREPART entries. */
+  sparepartRequestId: string | null;
   actor: UserSummary;
   createdAt: string;
 }

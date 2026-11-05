@@ -130,6 +130,9 @@ describe('Work order workflow (e2e)', () => {
     expect(waiting.body.status).toBe('WAITING_SPAREPART');
     const [req] = waiting.body.sparepartRequests;
     expect(req.items).toHaveLength(2);
+    // The timeline entry points at the request, so the UI can list its parts and quantities.
+    const requested = waiting.body.activities.find((a: { action: string }) => a.action === 'REQUEST_SPAREPART');
+    expect(requested.sparepartRequestId).toBe(req.id);
 
     // The SPV sees approve/reject; the mechanic can no longer start.
     const spvView = await as('Siti').get(`/work-orders/${woId}`).expect(200);

@@ -102,7 +102,7 @@ export class InMemoryActivityRepository implements WorkOrderActivityRepository {
   readonly rows: WorkOrderActivity[] = [];
 
   async record(activity: NewWorkOrderActivity) {
-    this.rows.push({ ...activity, id: randomUUID(), createdAt: new Date() });
+    this.rows.push({ sparepartRequestId: null, ...activity, id: randomUUID(), createdAt: new Date() });
   }
 }
 
