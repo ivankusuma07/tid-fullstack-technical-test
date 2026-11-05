@@ -52,6 +52,7 @@ export function useWorkOrderActions() {
       ({ requestId, note }: { requestId: string; note: string }) => workOrdersApi.rejectSparepart(requestId, note),
       'Sparepart request rejected',
     ),
+    addNote: useAction(({ id, note }: { id: string; note: string }) => workOrdersApi.addNote(id, note), 'Note added'),
     start: useAction((id: string) => workOrdersApi.start(id), 'Work started'),
     complete: useAction(
       ({ id, endDate }: { id: string; endDate: string }) => workOrdersApi.complete(id, endDate),

@@ -84,7 +84,7 @@ cd backend && npm run lint && npm run typecheck   # same checks as CI
 
 ## Walking through the workflow
 
-Use the **Acting as** selector in the header to switch roles. The **Admin / SPV / Mechanic** buttons pick the role, and the dropdown picks the user (useful for the two mechanics). Each switch logs in as that user and gets a fresh token. Action buttons appear on the list rows and on the detail page, and the detail page shows the **Activity** timeline of every step.
+Use the **Acting as** selector in the header to switch roles. The **Admin / SPV / Mechanic** buttons pick the role, and the dropdown picks the user (useful for the two mechanics). Each switch logs in as that user and gets a fresh token. Action buttons appear on the list rows and on the detail page, and the detail page shows the **Activity** timeline of every step, where anyone on the work order can post a note.
 
 1. **Admin**: *Add New Work Order* (pick the vehicle, then title, description, breakdown time). It starts as **Draft**, which can still be edited or deleted. Click **Submit**.
 2. **SPV**: **Assign Mechanic**, pick *Budi*.
@@ -197,6 +197,7 @@ All endpoints are under `/api`. Every endpoint except `POST /auth/login`, `GET /
 | POST | `/sparepart-requests/:id/reject` | SPV | Request `REJECTED`, WO `→ UPDATED`. Body: `{ note }` (required) |
 | POST | `/work-orders/:id/start` | MECHANIC (assigned) | `UPDATED/READY_TO_WORK → WORKING`, sets `startDate` |
 | POST | `/work-orders/:id/complete` | ADMIN | `WORKING → COMPLETED`. Body: `{ endDate }` |
+| POST | `/work-orders/:id/notes` | anyone who can see it | Adds a note to the timeline, no status change. Body: `{ note }` (max 1000 chars). Returns 201 |
 | GET | `/vehicles` | any | Fleet master data for the vehicle picker |
 | GET | `/users?role=` | public | Users for the selector / assign dropdown |
 | GET | `/health` | public | Docker healthcheck |
@@ -247,7 +248,7 @@ Follows the ERD in the brief (UUID primary keys, every timestamp is `timestamptz
 12. **Visibility:** Admin and SPV see all work orders. A mechanic only sees the work orders assigned to them, in the list and on the detail page. Any other id returns 404, so they can't probe which work orders exist. If the SPV reassigns a work order, it moves to the new mechanic's list.
 13. **Dates and timezones:** everything is stored as `timestamptz` (UTC) and exchanged as ISO 8601 **with an offset** (values without one are rejected as ambiguous). Date inputs use the browser's local time, and every date is shown in the viewer's timezone.
 14. **From the mockup:** each WO references a **vehicle** (fleet number from the `vehicles` master table, picked from a dropdown) and has a **breakdown time** (when the vehicle broke down, ≤ now) and a readable **WO number** (`WO-YYYYMMDD-0001`, from a Postgres sequence). Vehicles are seeded; there is no vehicle-management UI.
-15. **Activity timeline:** every workflow step is logged with actor, status change and note (e.g. the assigned mechanic or the SPV's reason). Deleting a draft deletes its timeline too.
+15. **Activity timeline:** every workflow step is logged with actor, status change and note (e.g. the assigned mechanic or the SPV's reason). Anyone who can see a work order (Admin, SPV, its assigned mechanic) can also post a free-text **note** there, in any status, so the people involved can coordinate. Notes are stored as `NOTE` activities and never change the status, and they can't be edited or deleted, so the timeline stays an audit trail. Deleting a draft deletes its timeline too.
 16. The mockup's **Picker** column (warehouse staff picking parts) is out of scope: it needs a fourth role and an inventory flow the brief doesn't include.
 
 ---

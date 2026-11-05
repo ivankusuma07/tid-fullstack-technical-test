@@ -23,6 +23,7 @@ export const workOrdersApi = {
   requestSparepart: (id: string, body: { note: string; items: SparepartItemInput[] }) =>
     api<WorkOrderDetail>('POST', `/work-orders/${id}/request-sparepart`, body),
   start: (id: string) => api<WorkOrderDetail>('POST', `/work-orders/${id}/start`),
+  addNote: (id: string, note: string) => api<WorkOrderDetail>('POST', `/work-orders/${id}/notes`, { note }),
   complete: (id: string, endDate: string) => api<WorkOrderDetail>('POST', `/work-orders/${id}/complete`, { endDate }),
 
   approveSparepart: (requestId: string, note?: string) =>

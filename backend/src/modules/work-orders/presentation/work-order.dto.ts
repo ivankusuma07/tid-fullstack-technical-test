@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { IsIsoDateTime } from '../../../common/validation/is-iso-date-time';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
+import { MAX_NOTE_LENGTH } from '../domain/work-order-activity';
 
 export class CreateWorkOrderDto {
   @ApiProperty({ example: 'Engine overheating' })
@@ -77,6 +78,14 @@ export class CompleteWorkOrderDto {
   @ApiProperty({ example: '2026-11-04T13:00:00.000Z', description: 'ISO 8601 with offset; >= start date, not in the future' })
   @IsIsoDateTime()
   endDate: string;
+}
+
+export class AddNoteDto {
+  @ApiProperty({ example: 'Customer asked to finish before the night shift.', maxLength: MAX_NOTE_LENGTH })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(MAX_NOTE_LENGTH)
+  note: string;
 }
 
 export class ListWorkOrdersQueryDto {

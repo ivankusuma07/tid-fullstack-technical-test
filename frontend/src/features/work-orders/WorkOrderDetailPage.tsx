@@ -85,14 +85,14 @@ export function WorkOrderDetailPage() {
               </div>
             </dl>
           </Card>
-    
-      <Card title="Sparepart requests">
-        <SparepartRequestList requests={wo.sparepartRequests} />
-      </Card>
+
+          <Card title="Sparepart requests">
+            <SparepartRequestList requests={wo.sparepartRequests} />
+          </Card>
         </div>
 
         <Card title="Activity">
-          <ActivityTimeline activities={wo.activities} />
+          <ActivityTimeline workOrderId={wo.id} activities={wo.activities} />
         </Card>
       </div>
     </div>

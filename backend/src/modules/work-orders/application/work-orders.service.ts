@@ -9,6 +9,7 @@ import { WorkOrder, WorkOrderDetail, WorkOrderView } from '../domain/work-order'
 import { assertCan, availableActions, canCreate, WorkOrderAction } from '../domain/work-order.policy';
 import { Page, WORK_ORDER_REPOSITORY, WorkOrderRepository } from '../domain/work-order.repository';
 import { WorkOrderStatus } from '../domain/work-order-status.enum';
+import { MAX_NOTE_LENGTH } from '../domain/work-order-activity';
 import { TransactionalRepositories, UNIT_OF_WORK, UnitOfWork } from './unit-of-work';
 import {
   CreateWorkOrderInput,
@@ -143,6 +144,23 @@ export class WorkOrdersService {
       }
       wo.endDate = endDate;
     });
+  }
+
+  /**
+   * Adds a free-text note to the timeline so everyone involved can read it. Anyone who can see the
+   * work order can comment, in any status; it never changes the status. Not a policy action because
+   * it isn't a workflow step: visibility is the only rule.
+   */
+  async addNote(actor: Actor, id: string, text: string): Promise<WithActions<WorkOrderDetail>> {
+    const note = this.requireText(text, 'Note');
+    if (note.length > MAX_NOTE_LENGTH) throw new ValidationError(`Note must be at most ${MAX_NOTE_LENGTH} characters`);
+
+    await this.uow.run(async ({ workOrders, activities }) => {
+      const wo = await workOrders.findById(id);
+      if (!wo || !this.isVisibleTo(wo, actor)) throw new NotFoundError('Work order', id);
+      await activities.record({ workOrderId: id, actorId: actor.id, action: 'NOTE', fromStatus: wo.status, toStatus: wo.status, note });
+    });
+    return this.getById(actor, id);
   }
 
   // ---------- helpers ----------

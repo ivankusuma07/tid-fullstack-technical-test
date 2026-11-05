@@ -215,6 +215,41 @@ describe('WorkOrdersService', () => {
     });
   });
 
+  describe('notes', () => {
+    it('anyone who can see the work order can add a note, without changing the status', async () => {
+      const { service, toUpdated } = setup();
+      const id = await toUpdated();
+
+      await service.addNote(admin, id, '  Customer wants it back by Friday  ');
+      await service.addNote(spv, id, 'Approved overtime');
+      const wo = await service.addNote(budi, id, 'Will check the radiator first');
+
+      expect(wo.status).toBe(S.UPDATED);
+      const notes = wo.activities.filter((a) => a.action === 'NOTE');
+      expect(notes.map((a) => [a.actor.id, a.note, a.fromStatus, a.toStatus])).toEqual([
+        [admin.id, 'Customer wants it back by Friday', S.UPDATED, S.UPDATED],
+        [spv.id, 'Approved overtime', S.UPDATED, S.UPDATED],
+        [budi.id, 'Will check the radiator first', S.UPDATED, S.UPDATED],
+      ]);
+      // Everyone involved reads the same timeline.
+      expect((await service.getById(spv, id)).activities.filter((a) => a.action === 'NOTE')).toHaveLength(3);
+    });
+
+    it('a mechanic cannot comment on a work order that is not assigned to them', async () => {
+      const { service, toUpdated } = setup();
+      const id = await toUpdated();
+      await expect(service.addNote(rudi, id, 'Hi')).rejects.toThrow(NotFoundError);
+    });
+
+    it('rejects blank and overlong notes, and unknown work orders', async () => {
+      const { service, toUpdated } = setup();
+      const id = await toUpdated();
+      await expect(service.addNote(admin, id, '   ')).rejects.toThrow('Note is required');
+      await expect(service.addNote(admin, id, 'x'.repeat(1001))).rejects.toThrow('at most 1000');
+      await expect(service.addNote(admin, '00000000-0000-4000-8000-000000000000', 'Hi')).rejects.toThrow(NotFoundError);
+    });
+  });
+
   describe('rules', () => {
     it('only the assigned mechanic can start', async () => {
       const { service, toUpdated } = setup();
